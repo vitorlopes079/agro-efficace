@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agro Efficace 🌱
 
-## Getting Started
+Plataforma segura para envio e processamento de arquivos geoespaciais agrícolas de grande porte.
 
-First, run the development server:
+## Stack
 
+- Next.js 16 + TypeScript
+- Prisma 7 + PostgreSQL (Supabase)
+- NextAuth v4 (autenticação)
+- Tailwind CSS + Recharts
+- Cloudflare R2 (armazenamento)
+- Resend (email)
+
+## Instalação
 ```bash
+npm install
+cp .env.example .env
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variáveis de Ambiente
+```env
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="..."
+RESEND_API_KEY="re_..."
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Funcionalidades
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Administrador:**
+- Gerenciamento de usuários (convidar, editar, banir, permissões)
+- Visualização de métricas e gráficos de receita
+- Acesso a todos os projetos e uploads
+- Logs de auditoria do sistema
+- Download e remoção de arquivos
 
-## Learn More
+**Usuário:**
+- Upload de arquivos geoespaciais (TIF, TIFF, SHP, KML, GeoJSON)
+- Criação e gerenciamento de projetos
+- Download de resultados processados
+- Dashboard pessoal com estatísticas
 
-To learn more about Next.js, take a look at the following resources:
+**Segurança:**
+- Sistema de convites por email (token válido 48h)
+- Autenticação JWT com roles (Admin/User)
+- Proteção de rotas por middleware
+- Senhas hasheadas (bcrypt)
+- Links de download protegidos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estrutura
+```
+src/
+├── app/
+│   ├── (auth)/          # Login, aceitar convite
+│   ├── (dashboard)/     # Área do usuário
+│   ├── admin/           # Painel administrativo
+│   └── api/             # API routes
+├── components/
+│   ├── ui/              # Componentes reutilizáveis
+│   ├── layout/          # Header, Sidebar
+│   └── charts/          # Gráficos
+└── lib/
+    ├── prisma.ts        # Database client
+    ├── auth.ts          # NextAuth config
+    └── email-templates/ # Templates de email
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Comandos Úteis
+```bash
+npm run dev              # Servidor de desenvolvimento
+npm run build            # Build para produção
+npx prisma studio        # Interface visual do banco
+npx prisma migrate dev   # Criar migration
+```
 
-## Deploy on Vercel
+## Fluxo de Convite
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Admin convida usuário via email
+2. Email enviado com link único (válido 48h)
+3. Usuário cria senha e ativa conta
+4. Status muda: PENDING → ACTIVE
+5. Login liberado
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Armazenamento
+
+**Cloudflare R2** (planejado):
+- 10 GB grátis permanente
+- Egress gratuito ilimitado
+- ~$0.015/GB após free tier
+- Compatível com API S3
+
+**Custo estimado (500 GB):** ~$7.50/mês
+
+## Deploy
+
+Vercel - configure as variáveis de ambiente em produção.
+
+---
+
+Desenvolvido com 🌱 por Agro Efficace
