@@ -88,12 +88,7 @@ npx prisma migrate dev   # Criar migration
 ## Armazenamento
 
 **Cloudflare R2** (planejado):
-- 10 GB grátis permanente
-- Egress gratuito ilimitado
-- ~$0.015/GB após free tier
-- Compatível com API S3
 
-**Custo estimado (500 GB):** ~$7.50/mês
 
 ## Deploy
 
