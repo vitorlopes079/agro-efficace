@@ -3,16 +3,29 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui";
+
+const Logo = () => (
+  <div className="relative h-[62.5px] w-56">
+    <Image
+      src="/logo-branco.png"
+      alt="Agro Efficace Logo"
+      fill
+      className="object-contain"
+      priority
+    />
+  </div>
+);
 
 export default function AcceptInvitePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<
-    "loading" | "valid" | "invalid" | "expired" | "success"
-  >("loading");
+  type Status = "loading" | "valid" | "invalid" | "expired" | "success";
+
+  const [status, setStatus] = useState<Status>(token ? "loading" : "invalid");
   const [userData, setUserData] = useState<{
     name: string;
     email: string;
@@ -20,41 +33,39 @@ export default function AcceptInvitePage() {
   } | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
 
-  // Password form state
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("invalid");
-      return;
-    }
+    if (!token) return;
 
-    validateToken(token);
-  }, [token]);
+    const validateToken = async () => {
+      try {
+        const response = await fetch(
+          `/api/auth/validate-invite?token=${token}`,
+        );
+        const data = await response.json();
 
-  const validateToken = async (token: string) => {
-    try {
-      const response = await fetch(`/api/auth/validate-invite?token=${token}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.error === "Invitation expired") {
-          setStatus("expired");
-        } else {
-          setStatus("invalid");
+        if (!response.ok) {
+          if (data.error === "Invitation expired") {
+            setStatus("expired");
+          } else {
+            setStatus("invalid");
+          }
+          return;
         }
-        return;
-      }
 
-      setUserData(data.user);
-      setStatus("valid");
-    } catch (error) {
-      console.error("Error validating token:", error);
-      setStatus("invalid");
-    }
-  };
+        setUserData(data.user);
+        setStatus("valid");
+      } catch (error) {
+        console.error("Error validating token:", error);
+        setStatus("invalid");
+      }
+    };
+
+    validateToken();
+  }, [token]);
 
   const validatePassword = () => {
     if (password.length < 8) {
@@ -172,80 +183,78 @@ export default function AcceptInvitePage() {
     );
   }
 
-  // Valid invitation - show password setup form
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8">
-        <div className="mb-6 text-center">
-          <div className="mb-4 text-6xl">🌱</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">
-            Bem-vindo ao AgroEfficace!
-          </h1>
-          <p className="text-zinc-400">Configure sua senha para começar</p>
+      <div className="w-full max-w-md">
+        <div className="mb-8 flex justify-center">
+          <Logo />
         </div>
 
-        <div className="mb-6 space-y-3 rounded-lg bg-zinc-800 p-4">
-          <div>
-            <p className="text-xs text-zinc-500">Nome</p>
-            <p className="text-sm font-medium text-white">{userData?.name}</p>
+        <div className="rounded-lg bg-zinc-900 p-8">
+          <div className="mb-6 text-center">
+            <h1 className="mb-2 text-2xl font-bold text-white">
+              Bem-vindo ao AgroEfficace!
+            </h1>
+            <p className="text-zinc-400">Configure sua senha para começar</p>
           </div>
-          <div>
-            <p className="text-xs text-zinc-500">Email</p>
-            <p className="text-sm font-medium text-white">{userData?.email}</p>
+
+          <div className="mb-6 space-y-3 rounded-lg bg-zinc-800 p-4">
+            <div>
+              <p className="text-xs text-zinc-500">Nome</p>
+              <p className="text-sm font-medium text-white">{userData?.name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-zinc-500">Email</p>
+              <p className="text-sm font-medium text-white">
+                {userData?.email}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-zinc-500">Função</p>
-            <p className="text-sm font-medium text-white">
-              {userData?.role === "ADMIN" ? "Administrador" : "Usuário"}
-            </p>
-          </div>
+
+          <form onSubmit={handleAcceptInvite} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-300">
+                Senha <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                placeholder="Mínimo 8 caracteres"
+                minLength={8}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-300">
+                Confirmar Senha <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                placeholder="Digite a senha novamente"
+                minLength={8}
+              />
+            </div>
+
+            {passwordError && (
+              <p className="text-sm text-red-500">{passwordError}</p>
+            )}
+
+            <Button type="submit" disabled={isAccepting} className="w-full">
+              {isAccepting ? "Criando conta..." : "Criar Conta"}
+            </Button>
+          </form>
+
+          <p className="mt-4 text-center text-xs text-zinc-500">
+            Ao continuar, você concorda com os termos de uso da plataforma
+          </p>
         </div>
-
-        <form onSubmit={handleAcceptInvite} className="space-y-4">
-          {/* Senha */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-300">
-              Senha <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-              placeholder="Mínimo 8 caracteres"
-              minLength={8}
-            />
-          </div>
-
-          {/* Confirmar Senha */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-300">
-              Confirmar Senha <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-              placeholder="Digite a senha novamente"
-              minLength={8}
-            />
-          </div>
-
-          {passwordError && (
-            <p className="text-sm text-red-500">{passwordError}</p>
-          )}
-
-          <Button type="submit" disabled={isAccepting} className="w-full">
-            {isAccepting ? "Criando conta..." : "Criar Conta e Entrar"}
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-xs text-zinc-500">
-          Ao continuar, você concorda com os termos de uso da plataforma
-        </p>
       </div>
     </div>
   );

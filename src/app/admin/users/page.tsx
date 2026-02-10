@@ -85,7 +85,6 @@ const columns = [
 
 export default function AdminUsersPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [isFetching, setIsFetching] = useState(true);
 
@@ -118,9 +117,7 @@ export default function AdminUsersPage() {
     phone?: string;
     notes?: string;
     role: "admin" | "user";
-  }) => {
-    setIsLoading(true);
-
+  }): Promise<string> => {
     try {
       const payload = {
         ...userData,
@@ -138,23 +135,17 @@ export default function AdminUsersPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Erro: ${data.error || "Erro desconhecido"}`);
-        setIsLoading(false);
-        return;
+        throw new Error(data.error || "Erro ao enviar convite");
       }
 
-      alert("Convite enviado com sucesso! ✅");
-      setIsInviteModalOpen(false);
+      // Recarregar lista de usuários em segundo plano
 
-      // Recarregar lista de usuários
-      fetchUsers();
+      // Retornar o link de convite (ajuste o campo conforme sua API retorna)
+      // Pode ser data.inviteLink, data.link, data.url, etc.
+      return data.invitationLink; // ← CORRIGIDO
     } catch (error) {
       console.error("Error inviting user:", error);
-      alert(
-        `Erro de rede: ${error instanceof Error ? error.message : "Falha ao conectar com o servidor"}`,
-      );
-    } finally {
-      setIsLoading(false);
+      throw error; // Re-throw para que o modal possa lidar com o erro
     }
   };
 
@@ -198,13 +189,6 @@ export default function AdminUsersPage() {
         onClose={() => setIsInviteModalOpen(false)}
         onInvite={handleInviteUser}
       />
-
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="text-white">Enviando convite...</div>
-        </div>
-      )}
     </div>
   );
 }

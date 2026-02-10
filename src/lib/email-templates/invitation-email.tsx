@@ -7,7 +7,6 @@ interface InvitationEmailProps {
 
 export function InvitationEmailTemplate({
   name,
-  role,
   invitationLink,
 }: InvitationEmailProps) {
   return `
@@ -63,34 +62,20 @@ export function InvitationEmailTemplate({
             margin-bottom: 16px;
             line-height: 1.7;
           }
-          .role-badge {
-            display: inline-block;
-            background-color: #d1fae5;
-            color: #065f46;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 14px;
-          }
           .button-container {
             text-align: center;
             margin: 32px 0;
           }
           .button {
             display: inline-block;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: #ffffff;
+            background: #10b981;
+            color: #ffffff !important;
             text-decoration: none;
-            padding: 14px 32px;
+            padding: 16px 40px;
             border-radius: 8px;
             font-weight: 600;
             font-size: 16px;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-            transition: transform 0.2s;
-          }
-          .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
           }
           .divider {
             border-top: 1px solid #e5e7eb;
@@ -145,8 +130,7 @@ export function InvitationEmailTemplate({
             <p class="greeting">Olá, ${name}!</p>
             
             <p class="message">
-              Você foi convidado para se juntar à plataforma AgroEfficace como 
-              <span class="role-badge">${role === "ADMIN" ? "Administrador" : "Usuário"}</span>
+              Você foi convidado para se juntar à plataforma AgroEfficace.
             </p>
             
             <p class="message">

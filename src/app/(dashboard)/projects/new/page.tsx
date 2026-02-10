@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, FileText } from "lucide-react";
+import { ArrowLeft, Upload, ShieldX } from "lucide-react";
 import {
   Button,
   Card,
@@ -14,13 +14,9 @@ import {
   Input,
   Select,
 } from "@/components/ui";
-
-interface FileItem {
-  id: string;
-  name: string;
-  size: string;
-  type: string;
-}
+import { usePermissions } from "@/providers/PermissionProvider";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { FileUploadItem } from "@/components/FileUploadItem/FileUploadItem";
 
 const projectTypes = [
   { value: "daninhas", label: "Daninhas" },
@@ -40,8 +36,29 @@ const cultures = [
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const { canUpload } = usePermissions();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [files, setFiles] = useState<FileItem[]>([]);
+  const [error, setError] = useState("");
+
+  // Hook separado para Ortomosaico
+  const {
+    files: ortomosaicoFiles,
+    addFiles: addOrtomosaicoFiles,
+    removeFile: removeOrtomosaicoFile,
+    isUploading: isUploadingOrtomosaico,
+    hasErrors: hasErrorsOrtomosaico,
+    completedFiles: completedOrtomosaicoFiles,
+  } = useFileUpload();
+
+  // Hook separado para Perímetros
+  const {
+    files: perimetroFiles,
+    addFiles: addPerimetroFiles,
+    removeFile: removePerimetroFile,
+    isUploading: isUploadingPerimetro,
+    hasErrors: hasErrorsPerimetro,
+    completedFiles: completedPerimetroFiles,
+  } = useFileUpload();
 
   const [formData, setFormData] = useState({
     projectName: "",
@@ -59,49 +76,123 @@ export default function NewProjectPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles) return;
-
-    const newFiles: FileItem[] = Array.from(selectedFiles).map((file) => ({
-      id: Math.random().toString(36).substring(7),
-      name: file.name,
-      size: formatFileSize(file.size),
-      type: file.type,
-    }));
-
-    setFiles((prev) => [...prev, ...newFiles]);
+  const handleOrtomosaicoChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await addOrtomosaicoFiles(e.target.files);
+    }
   };
 
-  const removeFile = (id: string) => {
-    setFiles((prev) => prev.filter((file) => file.id !== id));
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  const handlePerimetroChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await addPerimetroFiles(e.target.files);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    // Validar que tem pelo menos 1 ortomosaico
+    if (completedOrtomosaicoFiles.length === 0) {
+      setError("É necessário enviar pelo menos um ortomosaico");
+      return;
+    }
+
+    // Verificar se ainda tem uploads pendentes
+    if (isUploadingOrtomosaico || isUploadingPerimetro) {
+      setError("Aguarde os arquivos terminarem de fazer upload");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // TODO: API integration
-    console.log("Form data:", formData);
-    console.log("Files:", files);
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectName: formData.projectName,
+          projectType: formData.projectType.toUpperCase(),
+          culture: formData.culture.toUpperCase(),
+          notes: formData.notes || null,
+          files: [
+            // Ortomosaicos
+            ...completedOrtomosaicoFiles.map((f) => ({
+              fileKey: f.fileKey,
+              pendingUploadId: f.pendingUploadId,
+              category: "ORTOMOSAICO",
+            })),
+            // Perímetros
+            ...completedPerimetroFiles.map((f) => ({
+              fileKey: f.fileKey,
+              pendingUploadId: f.pendingUploadId,
+              category: "PERIMETRO_ANALISE",
+            })),
+          ],
+        }),
+      });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      const data = await response.json();
 
-    setIsSubmitting(false);
-    // router.push("/dashboard");
+      if (!response.ok) {
+        setError(data.error || "Erro ao criar projeto");
+        setIsSubmitting(false);
+        return;
+      }
+
+      alert("Projeto criado com sucesso! ✅");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error creating project:", error);
+      setError("Erro ao conectar com o servidor");
+      setIsSubmitting(false);
+    }
   };
 
-  const inputClassName =
-    "w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500";
+  const isUploading = isUploadingOrtomosaico || isUploadingPerimetro;
+  const hasErrors = hasErrorsOrtomosaico || hasErrorsPerimetro;
+
+  // If user can't upload, show blocked message
+  if (!canUpload) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        <div className="mb-8">
+          <Link
+            href="/dashboard"
+            className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar ao dashboard
+          </Link>
+        </div>
+
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
+              <ShieldX className="h-8 w-8 text-red-400" />
+            </div>
+            <h2 className="mb-2 text-xl font-bold text-white">
+              Acesso Bloqueado
+            </h2>
+            <p className="mb-6 max-w-md text-center text-sm text-zinc-400">
+              Sua permissão para criar novos projetos está temporariamente
+              desativada. Entre em contato com o administrador para mais
+              informações.
+            </p>
+            <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
@@ -121,13 +212,19 @@ export default function NewProjectPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-md border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* Project Info Card */}
         <Card>
           <CardHeader>
             <CardTitle>Informações do Projeto</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Project Name */}
             <Input
               label="Nome do Projeto / Fazenda"
               name="projectName"
@@ -135,9 +232,9 @@ export default function NewProjectPage() {
               onChange={handleInputChange}
               placeholder="Ex: Fazenda Santa Rita"
               required
+              disabled={isSubmitting}
             />
 
-            {/* Project Type */}
             <Select
               label="Tipo de Projeto"
               name="projectType"
@@ -146,9 +243,9 @@ export default function NewProjectPage() {
               options={projectTypes}
               placeholder="Selecione o tipo"
               required
+              disabled={isSubmitting}
             />
 
-            {/* Culture */}
             <Select
               label="Cultura"
               name="culture"
@@ -157,65 +254,98 @@ export default function NewProjectPage() {
               options={cultures}
               placeholder="Selecione a cultura"
               required
+              disabled={isSubmitting}
             />
           </CardContent>
         </Card>
 
-        {/* File Upload Card */}
+        {/* SEÇÃO 1: Ortomosaico */}
         <Card>
           <CardHeader>
-            <CardTitle>Arquivos</CardTitle>
+            <CardTitle>
+              Ortomosaico
+              <span className="ml-2 text-sm font-normal text-zinc-400">
+                (Obrigatório)
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Drop Zone */}
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-6 py-10 transition-colors hover:border-green-500/50 hover:bg-zinc-800">
               <Upload className="mb-3 h-10 w-10 text-zinc-500" />
               <p className="text-sm font-medium text-zinc-300">
-                Clique para enviar ou arraste os arquivos
+                Upload do Ortomosaico
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                Suporta: TIF, TIFF, SHP, KML, GeoJSON (máx. 500MB)
+                TIF, TIFF, ECW (Imagens georreferenciadas)
               </p>
               <input
                 type="file"
                 multiple
-                onChange={handleFileChange}
+                onChange={handleOrtomosaicoChange}
                 className="hidden"
-                accept=".tif,.tiff,.shp,.kml,.geojson,.json"
+                disabled={isSubmitting} // ← REMOVER isUploadingOrtomosaico
               />
             </label>
 
-            {/* File List */}
-            {files.length > 0 && (
+            {ortomosaicoFiles.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-zinc-300">
-                  Arquivos selecionados ({files.length})
+                  Arquivos: {ortomosaicoFiles.length}
                 </p>
-                <div className="space-y-2">
-                  {files.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-zinc-400" />
-                        <div>
-                          <p className="text-sm font-medium text-white">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-zinc-500">{file.size}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile(file.id)}
-                        className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-white"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {ortomosaicoFiles.map((file) => (
+                  <FileUploadItem
+                    key={file.id}
+                    file={file}
+                    onRemove={removeOrtomosaicoFile}
+                    disabled={isSubmitting}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* SEÇÃO 2: Perímetros de Análise */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Perímetros de Análise
+              <span className="ml-2 text-sm font-normal text-zinc-400">
+                (Opcional)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-6 py-10 transition-colors hover:border-blue-500/50 hover:bg-zinc-800">
+              <Upload className="mb-3 h-10 w-10 text-zinc-500" />
+              <p className="text-sm font-medium text-zinc-300">
+                Upload dos Perímetros
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                SHP, KML, GeoJSON (Shapefiles e vetores)
+              </p>
+              <input
+                type="file"
+                multiple
+                onChange={handlePerimetroChange}
+                className="hidden"
+                disabled={isSubmitting} // ← REMOVER isUploadingOrtomosaico
+              />
+            </label>
+
+            {perimetroFiles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-zinc-300">
+                  Arquivos: {perimetroFiles.length}
+                </p>
+                {perimetroFiles.map((file) => (
+                  <FileUploadItem
+                    key={file.id}
+                    file={file}
+                    onRemove={removePerimetroFile}
+                    disabled={isSubmitting}
+                  />
+                ))}
               </div>
             )}
           </CardContent>
@@ -233,7 +363,8 @@ export default function NewProjectPage() {
               onChange={handleInputChange}
               rows={4}
               placeholder="Informações adicionais sobre o projeto..."
-              className={`${inputClassName} resize-none`}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 resize-none"
+              disabled={isSubmitting}
             />
           </CardContent>
         </Card>
@@ -244,11 +375,19 @@ export default function NewProjectPage() {
             type="button"
             variant="ghost"
             onClick={() => router.push("/dashboard")}
+            disabled={isSubmitting || isUploading}
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enviando..." : "Criar Projeto"}
+          <Button
+            type="submit"
+            disabled={isSubmitting || isUploading || hasErrors}
+          >
+            {isSubmitting
+              ? "Criando..."
+              : isUploading
+                ? "Aguarde o upload..."
+                : "Criar Projeto"}
           </Button>
         </div>
       </form>

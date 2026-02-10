@@ -24,6 +24,7 @@ interface DataTableProps<T> {
     hasNext?: boolean;
   };
   rowAction?: (item: T) => ReactNode;
+  onRowClick?: (item: T) => void;
 }
 
 export function DataTable<T>({
@@ -34,6 +35,7 @@ export function DataTable<T>({
   actions,
   pagination,
   rowAction,
+  onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
@@ -73,7 +75,8 @@ export function DataTable<T>({
             {data.map((item) => (
               <tr
                 key={keyExtractor(item)}
-                className="group transition-colors hover:bg-zinc-800/30"
+                onClick={() => onRowClick?.(item)}
+                className={`group transition-colors hover:bg-zinc-800/30 ${onRowClick ? "cursor-pointer" : ""}`}
               >
                 {columns.map((column) => (
                   <td

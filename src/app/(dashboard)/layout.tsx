@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout";
+import { PermissionProvider } from "@/providers/PermissionProvider";
 
 export default function DashboardLayout({
   children,
@@ -6,9 +7,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <PermissionProvider>
       <Header />
       {children}
-    </>
+    </PermissionProvider>
   );
 }

@@ -1,7 +1,7 @@
 // src/app/admin/users/[id]/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -28,7 +28,6 @@ import {
   StatusBadge,
 } from "@/components/ui";
 
-// Mock data - will come from API
 type User = {
   id: string;
   name: string;
@@ -39,68 +38,9 @@ type User = {
   notes: string | null;
   canUpload: boolean;
   invitedBy: { name: string } | null;
-  invitedAt: string;
+  invitedAt: string | null;
   lastLoginAt: string | null;
   createdAt: string;
-};
-
-const mockUsers: Record<string, User> = {
-  "1": {
-    id: "1",
-    name: "Guilherme Silva",
-    email: "guilherme@fazenda.com",
-    phone: "+55 11 99999-1234",
-    role: "USER",
-    status: "ACTIVE",
-    notes: "Cliente premium, fazenda com 450 hectares de cana.",
-    canUpload: true,
-    invitedBy: { name: "Admin Master" },
-    invitedAt: "2025-01-15",
-    lastLoginAt: "2025-02-06 14:32",
-    createdAt: "2025-01-15",
-  },
-  "2": {
-    id: "2",
-    name: "Maria Santos",
-    email: "maria@sitio.com",
-    phone: "+55 11 98888-5678",
-    role: "USER",
-    status: "ACTIVE",
-    notes: null,
-    canUpload: true,
-    invitedBy: { name: "Admin Master" },
-    invitedAt: "2025-01-10",
-    lastLoginAt: "2025-02-05 09:15",
-    createdAt: "2025-01-10",
-  },
-  "3": {
-    id: "3",
-    name: "João Pereira",
-    email: "joao@fazendaaurora.com",
-    phone: null,
-    role: "ADMIN",
-    status: "PENDING",
-    notes: "Aguardando confirmação de email.",
-    canUpload: false,
-    invitedBy: null,
-    invitedAt: "2025-01-08",
-    lastLoginAt: null,
-    createdAt: "2025-01-08",
-  },
-  "4": {
-    id: "4",
-    name: "Ana Costa",
-    email: "ana@rancho.com",
-    phone: "+55 11 97777-9999",
-    role: "USER",
-    status: "SUSPENDED",
-    notes: "Conta suspensa por violação dos termos de uso.",
-    canUpload: false,
-    invitedBy: { name: "Guilherme Silva" },
-    invitedAt: "2024-12-20",
-    lastLoginAt: "2025-01-02 18:45",
-    createdAt: "2024-12-20",
-  },
 };
 
 const statusConfig = {
@@ -115,81 +55,150 @@ export default function UserDetailPage() {
   const router = useRouter();
   const userId = params.id as string;
 
-  const [user, setUser] = useState<User | null>(mockUsers[userId] || null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [notesValue, setNotesValue] = useState(user?.notes || "");
+  const [notesValue, setNotesValue] = useState("");
 
-  if (!user) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center">
-        <p className="mb-4 text-zinc-400">Usuário não encontrado</p>
-        <Button variant="ghost" onClick={() => router.push("/admin/users")}>
-          Voltar para lista
-        </Button>
-      </div>
-    );
-  }
+  // Fetch user data on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || "Erro ao carregar usuário");
+          return;
+        }
+
+        setUser(data.user);
+        setNotesValue(data.user.notes || "");
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setError("Erro ao carregar usuário");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [userId]);
 
   const handleBanUser = async () => {
+    if (!user) return;
+
     if (
       !confirm(
-        `Tem certeza que deseja ${user.status === "SUSPENDED" ? "desbanir" : "banir"} este usuário?`,
+        `Tem certeza que deseja ${user.status === "SUSPENDED" ? "desbanir" : "banir"} este usuário?`
       )
     ) {
       return;
     }
 
-    setIsLoading(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsActionLoading(true);
 
-    setUser((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        status: prev.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED",
-        canUpload: prev.status === "SUSPENDED" ? true : false,
-      };
-    });
-    setIsLoading(false);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/ban`, {
+        method: "PATCH",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Erro ao atualizar status");
+        return;
+      }
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          status: data.user.status,
+          canUpload: data.user.canUpload,
+        };
+      });
+    } catch (err) {
+      console.error("Error banning user:", err);
+      alert("Erro ao atualizar status do usuário");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleToggleUpload = async () => {
+    if (!user) return;
+
     if (
       !confirm(
-        `Tem certeza que deseja ${user.canUpload ? "desativar" : "ativar"} o envio de projetos?`,
+        `Tem certeza que deseja ${user.canUpload ? "desativar" : "ativar"} o envio de projetos?`
       )
     ) {
       return;
     }
 
-    setIsLoading(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsActionLoading(true);
 
-    setUser((prev) => {
-      if (!prev) return prev;
-      return { ...prev, canUpload: !prev.canUpload };
-    });
-    setIsLoading(false);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/upload`, {
+        method: "PATCH",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Erro ao atualizar permissão");
+        return;
+      }
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        return { ...prev, canUpload: data.user.canUpload };
+      });
+    } catch (err) {
+      console.error("Error toggling upload:", err);
+      alert("Erro ao atualizar permissão de envio");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleSaveNotes = async () => {
-    setIsLoading(true);
-    // TODO: API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsActionLoading(true);
 
-    setUser((prev) => {
-      if (!prev) return prev;
-      return { ...prev, notes: notesValue || null };
-    });
-    setIsEditingNotes(false);
-    setIsLoading(false);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/notes`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: notesValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Erro ao salvar observações");
+        return;
+      }
+
+      setUser((prev) => {
+        if (!prev) return prev;
+        return { ...prev, notes: data.user.notes };
+      });
+      setIsEditingNotes(false);
+    } catch (err) {
+      console.error("Error saving notes:", err);
+      alert("Erro ao salvar observações");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {
-    setNotesValue(user.notes || "");
+    setNotesValue(user?.notes || "");
     setIsEditingNotes(false);
   };
 
@@ -201,6 +210,30 @@ export default function UserDetailPage() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-green-500 border-t-transparent mx-auto" />
+          <p className="text-zinc-400">Carregando usuário...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !user) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center">
+        <p className="mb-4 text-zinc-400">{error || "Usuário não encontrado"}</p>
+        <Button variant="ghost" onClick={() => router.push("/admin/users")}>
+          Voltar para lista
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -280,7 +313,9 @@ export default function UserDetailPage() {
                   <Calendar className="h-5 w-5 text-zinc-500" />
                   <div>
                     <p className="text-xs text-zinc-500">Convidado em</p>
-                    <p className="text-sm text-white">{user.invitedAt}</p>
+                    <p className="text-sm text-white">
+                      {user.invitedAt || "N/A"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -341,7 +376,7 @@ export default function UserDetailPage() {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={handleCancelEdit}
-                      disabled={isLoading}
+                      disabled={isActionLoading}
                       className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -349,11 +384,11 @@ export default function UserDetailPage() {
                     </button>
                     <button
                       onClick={handleSaveNotes}
-                      disabled={isLoading}
+                      disabled={isActionLoading}
                       className="flex items-center gap-2 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Save className="h-3.5 w-3.5" />
-                      {isLoading ? "Salvando..." : "Salvar"}
+                      {isActionLoading ? "Salvando..." : "Salvar"}
                     </button>
                   </div>
                 </div>
@@ -406,7 +441,7 @@ export default function UserDetailPage() {
               {/* Toggle Upload Permission */}
               <button
                 onClick={handleToggleUpload}
-                disabled={isLoading || user.status === "SUSPENDED"}
+                disabled={isActionLoading || user.status === "SUSPENDED"}
                 className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   user.canUpload
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
@@ -433,7 +468,7 @@ export default function UserDetailPage() {
               {/* Ban/Unban User */}
               <button
                 onClick={handleBanUser}
-                disabled={isLoading}
+                disabled={isActionLoading}
                 className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                   user.status === "SUSPENDED"
                     ? "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"

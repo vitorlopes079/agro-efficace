@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     console.log("📧 [INVITE API] Sending invitation email...");
     try {
       const emailResult = await resend.emails.send({
-        from: "AgroEfficace <onboarding@resend.dev>",
+        from: "AgroEfficace <noreply@agroefficace.com.br>",
         to: [email],
         subject: "You've been invited to AgroEfficace",
         html: InvitationEmailTemplate({
@@ -125,10 +125,31 @@ export async function POST(req: NextRequest) {
         }),
       });
 
-      console.log("✅ [INVITE API] Email sent successfully:", emailResult);
+      console.log("📧 [INVITE API] Email result:", emailResult);
+
+      // Check if Resend returned an error (they don't throw, they return error in response)
+      if (emailResult.error) {
+        console.error(
+          "❌ [INVITE API] Failed to send invitation email:",
+          emailResult.error,
+        );
+
+        // Delete the user if email fails to send
+        console.log("🗑️ [INVITE API] Deleting user due to email failure...");
+        await prisma.user.delete({
+          where: { id: user.id },
+        });
+
+        return NextResponse.json(
+          { error: "Failed to send invitation email. Please try again." },
+          { status: 500 },
+        );
+      }
+
+      console.log("✅ [INVITE API] Email sent successfully");
     } catch (emailError) {
       console.error(
-        "❌ [INVITE API] Failed to send invitation email:",
+        "❌ [INVITE API] Failed to send invitation email (exception):",
         emailError,
       );
 
@@ -164,7 +185,7 @@ export async function POST(req: NextRequest) {
     console.log("✅ [INVITE API] Audit log created");
     console.log("🎉 [INVITE API] Invitation process completed successfully");
 
-    // Return success (don't expose the token in the response)
+    // Return success
     return NextResponse.json(
       {
         success: true,
@@ -176,6 +197,7 @@ export async function POST(req: NextRequest) {
           role: user.role,
           status: user.status,
         },
+        invitationLink,
       },
       { status: 201 },
     );
