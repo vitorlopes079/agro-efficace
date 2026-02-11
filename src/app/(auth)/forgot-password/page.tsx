@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                 O link expira em 1 hora.
               </p>
               <Link href="/login">
-                <Button variant="outline" fullWidth>
+                <Button variant="secondary" fullWidth>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Voltar para login
                 </Button>
