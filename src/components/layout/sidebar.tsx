@@ -19,7 +19,7 @@ export function Sidebar({ items }: SidebarProps) {
 
   return (
     <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 border-r border-zinc-800 bg-zinc-950 p-4">
-      <nav className="space-y-1">
+      <nav className="pt-4 space-y-1">
         {items.map((item) => {
           const isActive = pathname === item.href;
 

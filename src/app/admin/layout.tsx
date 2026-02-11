@@ -33,7 +33,7 @@ export default function AdminLayout({
     <>
       <Header />
       <Sidebar items={navItems} />
-      <main className="ml-64 pt-16">
+      <main className="ml-64 pt-4">
         <div className="p-8">{children}</div>
       </main>
     </>
