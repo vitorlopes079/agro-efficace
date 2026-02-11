@@ -26,6 +26,7 @@ import {
   CardHeader,
   CardTitle,
   StatusBadge,
+  useToast,
 } from "@/components/ui";
 
 type User = {
@@ -53,6 +54,7 @@ const statusConfig = {
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const userId = params.id as string;
 
   const [user, setUser] = useState<User | null>(null);
@@ -108,7 +110,7 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Erro ao atualizar status");
+        toast.error("Erro", data.error || "Erro ao atualizar status");
         return;
       }
 
@@ -120,9 +122,14 @@ export default function UserDetailPage() {
           canUpload: data.user.canUpload,
         };
       });
+
+      toast.success(
+        "Status atualizado",
+        data.user.status === "SUSPENDED" ? "Usuário banido com sucesso." : "Usuário reativado com sucesso."
+      );
     } catch (err) {
       console.error("Error banning user:", err);
-      alert("Erro ao atualizar status do usuário");
+      toast.error("Erro", "Erro ao atualizar status do usuário");
     } finally {
       setIsActionLoading(false);
     }
@@ -149,7 +156,7 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Erro ao atualizar permissão");
+        toast.error("Erro", data.error || "Erro ao atualizar permissão");
         return;
       }
 
@@ -157,9 +164,14 @@ export default function UserDetailPage() {
         if (!prev) return prev;
         return { ...prev, canUpload: data.user.canUpload };
       });
+
+      toast.success(
+        "Permissão atualizada",
+        data.user.canUpload ? "Envio de projetos ativado." : "Envio de projetos desativado."
+      );
     } catch (err) {
       console.error("Error toggling upload:", err);
-      alert("Erro ao atualizar permissão de envio");
+      toast.error("Erro", "Erro ao atualizar permissão de envio");
     } finally {
       setIsActionLoading(false);
     }
@@ -180,7 +192,7 @@ export default function UserDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Erro ao salvar observações");
+        toast.error("Erro", data.error || "Erro ao salvar observações");
         return;
       }
 
@@ -189,9 +201,10 @@ export default function UserDetailPage() {
         return { ...prev, notes: data.user.notes };
       });
       setIsEditingNotes(false);
+      toast.success("Salvo", "Observações atualizadas com sucesso.");
     } catch (err) {
       console.error("Error saving notes:", err);
-      alert("Erro ao salvar observações");
+      toast.error("Erro", "Erro ao salvar observações");
     } finally {
       setIsActionLoading(false);
     }

@@ -4,7 +4,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui";
+import { Button, useToast } from "@/components/ui";
 
 const Logo = () => (
   <div className="relative h-[62.5px] w-56">
@@ -21,6 +21,7 @@ const Logo = () => (
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const token = searchParams.get("token");
 
   type Status = "loading" | "valid" | "invalid" | "expired" | "success";
@@ -105,7 +106,7 @@ function ResetPasswordContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Erro: ${data.error}`);
+        toast.error("Erro", data.error || "Erro ao redefinir senha");
         setIsSubmitting(false);
         return;
       }
@@ -117,7 +118,7 @@ function ResetPasswordContent() {
       }, 2000);
     } catch (error) {
       console.error("Error resetting password:", error);
-      alert("Erro ao redefinir senha. Tente novamente.");
+      toast.error("Erro", "Erro ao redefinir senha. Tente novamente.");
       setIsSubmitting(false);
     }
   };

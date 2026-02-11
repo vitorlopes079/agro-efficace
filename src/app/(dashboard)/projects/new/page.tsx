@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft, Upload, ShieldX } from "lucide-react";
 import {
@@ -11,12 +12,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CreatingProjectOverlay,
   Input,
   Select,
+  useToast,
 } from "@/components/ui";
 import { usePermissions } from "@/providers/PermissionProvider";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { FileUploadItem } from "@/components/FileUploadItem/FileUploadItem";
+import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
 
 const projectTypes = [
   { value: "daninhas", label: "Daninhas" },
@@ -34,11 +38,23 @@ const cultures = [
   { value: "algodao", label: "Algodão" },
 ];
 
+interface SelectedUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export default function NewProjectPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { canUpload } = usePermissions();
+  const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
+
+  const isAdmin = session?.user?.role === "ADMIN";
+  const backUrl = isAdmin ? "/admin/projects" : "/dashboard";
 
   // Hook separado para Ortomosaico
   const {
@@ -92,9 +108,15 @@ export default function NewProjectPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+
+    // Admin must select a user
+    if (isAdmin && !selectedUser) {
+      setError("Selecione o proprietário do projeto");
+      return;
+    }
 
     // Validar que tem pelo menos 1 ortomosaico
     if (completedOrtomosaicoFiles.length === 0) {
@@ -121,6 +143,8 @@ export default function NewProjectPage() {
           projectType: formData.projectType.toUpperCase(),
           culture: formData.culture.toUpperCase(),
           notes: formData.notes || null,
+          // Include userId when admin creates for another user
+          ...(isAdmin && selectedUser ? { userId: selectedUser.id } : {}),
           files: [
             // Ortomosaicos
             ...completedOrtomosaicoFiles.map((f) => ({
@@ -146,8 +170,8 @@ export default function NewProjectPage() {
         return;
       }
 
-      alert("Projeto criado com sucesso! ✅");
-      router.push("/dashboard");
+      toast.success("Projeto criado com sucesso!", "Seu projeto foi enviado para processamento.");
+      router.push(backUrl);
     } catch (error) {
       console.error("Error creating project:", error);
       setError("Erro ao conectar com o servidor");
@@ -158,17 +182,17 @@ export default function NewProjectPage() {
   const isUploading = isUploadingOrtomosaico || isUploadingPerimetro;
   const hasErrors = hasErrorsOrtomosaico || hasErrorsPerimetro;
 
-  // If user can't upload, show blocked message
-  if (!canUpload) {
+  // If user can't upload (and is not admin), show blocked message
+  if (!canUpload && !isAdmin) {
     return (
       <main className="mx-auto max-w-3xl px-6 py-8">
         <div className="mb-8">
           <Link
-            href="/dashboard"
+            href={backUrl}
             className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar ao dashboard
+            Voltar
           </Link>
         </div>
 
@@ -185,8 +209,8 @@ export default function NewProjectPage() {
               desativada. Entre em contato com o administrador para mais
               informações.
             </p>
-            <Button variant="ghost" onClick={() => router.push("/dashboard")}>
-              Voltar ao Dashboard
+            <Button variant="ghost" onClick={() => router.push(backUrl)}>
+              Voltar
             </Button>
           </CardContent>
         </Card>
@@ -195,15 +219,20 @@ export default function NewProjectPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-8">
-      {/* Header */}
-      <div className="mb-8">
+    <>
+      {/* Loading Overlay */}
+      {isSubmitting && <CreatingProjectOverlay />}
+
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        {/* Header */}
+
+        <div className="mb-8">
         <Link
-          href="/dashboard"
+          href={backUrl}
           className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar ao dashboard
+          Voltar
         </Link>
         <h1 className="text-2xl font-bold text-white">Novo Envio</h1>
         <p className="mt-1 text-sm text-zinc-400">
@@ -225,6 +254,16 @@ export default function NewProjectPage() {
             <CardTitle>Informações do Projeto</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* User Selection - Admin Only */}
+            {isAdmin && (
+              <UserSearchSelect
+                value={selectedUser}
+                onChange={setSelectedUser}
+                disabled={isSubmitting}
+                required
+              />
+            )}
+
             <Input
               label="Nome do Projeto / Fazenda"
               name="projectName"
@@ -374,7 +413,7 @@ export default function NewProjectPage() {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(backUrl)}
             disabled={isSubmitting || isUploading}
           >
             Cancelar
@@ -392,5 +431,6 @@ export default function NewProjectPage() {
         </div>
       </form>
     </main>
+    </>
   );
 }

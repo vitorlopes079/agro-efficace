@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("📦 [PROJECT API] Request body:", body);
 
-    const { projectName, projectType, culture, notes, files } = body;
+    const { projectName, projectType, culture, notes, files, userId } = body;
 
     if (!projectName || !projectType || !culture) {
       console.log("❌ [PROJECT API] Missing required fields");
@@ -114,6 +114,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cultura inválida" }, { status: 400 });
     }
 
+    // Determine project owner
+    let projectOwnerId = session.user.id;
+
+    // If admin provides a userId, validate and use it
+    if (session.user.role === "ADMIN" && userId) {
+      console.log("🔍 [PROJECT API] Admin creating project for user:", userId);
+      const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { status: true, name: true },
+      });
+
+      if (!targetUser) {
+        console.log("❌ [PROJECT API] Target user not found");
+        return NextResponse.json(
+          { error: "Usuário selecionado não encontrado" },
+          { status: 400 }
+        );
+      }
+
+      if (targetUser.status !== "ACTIVE") {
+        console.log("❌ [PROJECT API] Target user is not active");
+        return NextResponse.json(
+          { error: "Usuário selecionado não está ativo" },
+          { status: 400 }
+        );
+      }
+
+      console.log(`✅ [PROJECT API] Creating project for user: ${targetUser.name}`);
+      projectOwnerId = userId;
+    }
+
     console.log("💾 [PROJECT API] Creating project in database...");
     const project = await prisma.project.create({
       data: {
@@ -121,7 +152,7 @@ export async function POST(req: NextRequest) {
         projectType: projectTypeUpper,
         culture: cultureUpper,
         notes: notes || null,
-        userId: session.user.id,
+        userId: projectOwnerId,
         status: "PROCESSING",
       },
     });
@@ -245,6 +276,10 @@ export async function POST(req: NextRequest) {
           projectType: project.projectType,
           culture: project.culture,
           filesCount: processedCount,
+          // Track if admin created for another user
+          ...(projectOwnerId !== session.user.id
+            ? { createdForUserId: projectOwnerId, createdByAdmin: true }
+            : {}),
         },
         ipAddress: getClientIp(req),
         userAgent: req.headers.get("user-agent") || null,

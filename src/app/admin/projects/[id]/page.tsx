@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, DollarSign, X, Check } from "lucide-react";
-import { StatusBadge, Button, Card, CardHeader, CardTitle, CardContent, Input } from "@/components/ui";
+import { StatusBadge, Button, Card, CardHeader, CardTitle, CardContent, Input, useToast } from "@/components/ui";
 import {
   ProjectInfoCard,
   ProjectUserCard,
@@ -138,6 +138,7 @@ function PaymentModal({ isOpen, onClose, project, onSave }: PaymentModalProps) {
 export default function AdminProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const [project, setProject] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -196,7 +197,7 @@ export default function AdminProjectDetailPage() {
 
   const handleUploadSolution = () => {
     // TODO: Implement upload solution functionality
-    alert("Funcionalidade em desenvolvimento");
+    toast.info("Em breve", "Esta funcionalidade está em desenvolvimento.");
   };
 
   if (isLoading) {

@@ -4,7 +4,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui";
+import { Button, useToast } from "@/components/ui";
 
 const Logo = () => (
   <div className="relative h-[62.5px] w-56">
@@ -21,6 +21,7 @@ const Logo = () => (
 function AcceptInviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const token = searchParams.get("token");
 
   type Status = "loading" | "valid" | "invalid" | "expired" | "success";
@@ -106,7 +107,7 @@ function AcceptInviteContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Erro: ${data.error}`);
+        toast.error("Erro", data.error || "Erro ao aceitar convite");
         setIsAccepting(false);
         return;
       }
@@ -118,7 +119,7 @@ function AcceptInviteContent() {
       }, 2000);
     } catch (error) {
       console.error("Error accepting invite:", error);
-      alert("Erro ao aceitar convite. Tente novamente.");
+      toast.error("Erro", "Erro ao aceitar convite. Tente novamente.");
       setIsAccepting(false);
     }
   };
