@@ -25,6 +25,9 @@ model User {
   invitationToken     String?   @unique
   invitationExpiresAt DateTime?
   invitedById         String?
+
+  passwordResetToken     String?   @unique
+  passwordResetExpiresAt DateTime?
   invitedBy           User?     @relation("UserInvitations", fields: [invitedById], references: [id], onDelete: SetNull)
   invitedUsers        User[]    @relation("UserInvitations")
   invitedAt           DateTime  @default(now())
@@ -43,6 +46,7 @@ model User {
   @@index([email])
   @@index([status])
   @@index([invitationToken])
+  @@index([passwordResetToken])
   @@map("users")
 }
 
