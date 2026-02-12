@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         console.log("❌ [PROJECT API] Target user not found");
         return NextResponse.json(
           { error: "Usuário selecionado não encontrado" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -137,11 +137,13 @@ export async function POST(req: NextRequest) {
         console.log("❌ [PROJECT API] Target user is not active");
         return NextResponse.json(
           { error: "Usuário selecionado não está ativo" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
-      console.log(`✅ [PROJECT API] Creating project for user: ${targetUser.name}`);
+      console.log(
+        `✅ [PROJECT API] Creating project for user: ${targetUser.name}`,
+      );
       projectOwnerId = userId;
     }
 
@@ -153,7 +155,7 @@ export async function POST(req: NextRequest) {
         culture: cultureUpper,
         notes: notes || null,
         userId: projectOwnerId,
-        status: "PROCESSING",
+        status: "PENDING",
       },
     });
     console.log("✅ [PROJECT API] Project created:", project.id);
@@ -362,6 +364,8 @@ export async function GET(req: NextRequest) {
       status: project.status,
       notes: project.notes,
       filesCount: project._count.files,
+      area: project.areaProcessed ? project.areaProcessed.toString() : null,
+      price: project.price.toString(),
       userName: project.user.name,
       userEmail: project.user.email,
       createdAt: project.createdAt.toISOString(),

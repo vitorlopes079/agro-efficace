@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable, SearchInput, StatCard, StatusBadge } from "@/components/ui";
+import { projectStatusConfig } from "@/components/project";
 
 const GridIcon = () => (
   <svg
@@ -49,15 +50,11 @@ interface Project {
   projectType: string;
   culture: string;
   status: string;
+  area: string | null;
+  price: string;
   filesCount: number;
   createdAt: string;
 }
-
-const statusConfig: Record<string, { label: string; variant: "amber" | "green" | "red" }> = {
-  PROCESSING: { label: "Em andamento", variant: "amber" },
-  COMPLETED: { label: "Concluído", variant: "green" },
-  CANCELLED: { label: "Cancelado", variant: "red" },
-};
 
 const columns = [
   {
@@ -89,10 +86,25 @@ const columns = [
     ),
   },
   {
-    key: "filesCount",
-    header: "Arquivos",
+    key: "area",
+    header: "Área",
     render: (project: Project) => (
-      <span className="text-sm text-zinc-300">{project.filesCount}</span>
+      <span className="text-sm text-zinc-300">
+        {project.area && parseFloat(project.area) > 0
+          ? `${parseFloat(project.area).toFixed(2)} ha`
+          : "—"}
+      </span>
+    ),
+  },
+  {
+    key: "price",
+    header: "Valor",
+    render: (project: Project) => (
+      <span className="text-sm text-zinc-300">
+        {project.price && parseFloat(project.price) > 0
+          ? `R$ ${parseFloat(project.price).toFixed(2)}`
+          : "—"}
+      </span>
     ),
   },
   {
@@ -108,59 +120,63 @@ const columns = [
     key: "status",
     header: "Status",
     render: (project: Project) => {
-      const config = statusConfig[project.status as keyof typeof statusConfig];
-      return <StatusBadge label={config.label} variant={config.variant} />;
+      const config = projectStatusConfig[project.status];
+      return config ? (
+        <StatusBadge label={config.label} variant={config.variant} />
+      ) : null;
     },
   },
 ];
+
+interface Stats {
+  projects: { thisMonth: number; allTime: number };
+  area: { thisMonth: number; allTime: number };
+  balanceToPay: number;
+}
 
 export default function Home() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalProjects: 0,
-    projectsThisMonth: 0,
-    areaProcessed: 0,
+  const [showProjectsAllTime, setShowProjectsAllTime] = useState(false);
+  const [showAreaAllTime, setShowAreaAllTime] = useState(false);
+  const [stats, setStats] = useState<Stats>({
+    projects: { thisMonth: 0, allTime: 0 },
+    area: { thisMonth: 0, allTime: 0 },
     balanceToPay: 0,
   });
 
   useEffect(() => {
-    fetchProjects();
+    fetchData();
   }, []);
 
-  const fetchProjects = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/projects");
-      const data = await response.json();
+      // Fetch projects and stats in parallel
+      const [projectsRes, statsRes] = await Promise.all([
+        fetch("/api/projects"),
+        fetch("/api/projects/stats"),
+      ]);
 
-      if (response.ok) {
-        setProjects(data.projects);
+      const [projectsData, statsData] = await Promise.all([
+        projectsRes.json(),
+        statsRes.json(),
+      ]);
 
-        const totalProjects = data.projects.length;
-        const thisMonth = new Date().getMonth();
-        const thisYear = new Date().getFullYear();
-
-        const projectsThisMonth = data.projects.filter((p: Project) => {
-          const projectDate = new Date(p.createdAt);
-          return (
-            projectDate.getMonth() === thisMonth &&
-            projectDate.getFullYear() === thisYear
-          );
-        }).length;
-
-        setStats({
-          totalProjects,
-          projectsThisMonth,
-          areaProcessed: 0,
-          balanceToPay: 0,
-        });
+      if (projectsRes.ok) {
+        setProjects(projectsData.projects);
       } else {
-        console.error("Error fetching projects:", data.error);
+        console.error("Error fetching projects:", projectsData.error);
+      }
+
+      if (statsRes.ok) {
+        setStats(statsData);
+      } else {
+        console.error("Error fetching stats:", statsData.error);
       }
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setIsLoading(false);
     }
@@ -184,21 +200,27 @@ export default function Home() {
       {/* Stats */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          title="Total de Projetos"
-          value={stats.totalProjects}
+          title={`Projetos Concluídos ${showProjectsAllTime ? "(total)" : "(este mês)"}`}
+          value={
+            showProjectsAllTime ? stats.projects.allTime : stats.projects.thisMonth
+          }
           icon={<GridIcon />}
           iconColor="blue"
-          trend={{
-            value: `${stats.projectsThisMonth}`,
-            label: "neste mês",
+          action={{
+            label: showProjectsAllTime ? "ver este mês" : "ver total",
+            onClick: () => setShowProjectsAllTime(!showProjectsAllTime),
           }}
         />
         <StatCard
-          title="Área Processada"
-          value={stats.areaProcessed}
+          title={`Área Processada ${showAreaAllTime ? "(total)" : "(este mês)"}`}
+          value={showAreaAllTime ? stats.area.allTime : stats.area.thisMonth}
           unit="ha"
           icon={<MapPinIcon />}
           iconColor="emerald"
+          action={{
+            label: showAreaAllTime ? "ver este mês" : "ver total",
+            onClick: () => setShowAreaAllTime(!showAreaAllTime),
+          }}
         />
         <StatCard
           title="Saldo a Pagar"
@@ -233,7 +255,7 @@ export default function Home() {
               e.stopPropagation();
               router.push(`/projects/${project.id}`);
             }}
-            className="rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-medium text-white opacity-0 transition-all hover:bg-zinc-700 group-hover:opacity-100"
+            className="rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-medium text-white transition-all hover:bg-zinc-700"
           >
             Abrir
           </button>

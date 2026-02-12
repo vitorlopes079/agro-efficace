@@ -4,9 +4,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button, DataTable, StatusBadge } from "@/components/ui";
+import {
+  projectStatusConfig,
+  projectTypeLabels,
+  cultureLabels,
+} from "@/components/project";
 import { FolderOpen } from "lucide-react";
 
-type ProjectStatus = "PROCESSING" | "COMPLETED" | "CANCELLED";
+type ProjectStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
 type ProjectType = "DANINHAS" | "FALHAS" | "RESTITUICAO" | "MAPEAMENTO";
 type Culture = "CANA" | "MILHO" | "SOJA" | "EUCALIPTO" | "CAFE" | "ALGODAO";
 
@@ -17,6 +22,10 @@ interface Project {
   culture: Culture;
   status: ProjectStatus;
   notes: string | null;
+  isArchived: boolean;
+  archivedAt: string | null;
+  area: string | null;
+  price: string;
   owner: {
     id: string;
     name: string;
@@ -29,52 +38,33 @@ interface Project {
 
 interface StatusCounts {
   all: number;
+  PENDING: number;
   PROCESSING: number;
   COMPLETED: number;
   CANCELLED: number;
+  archived: number;
 }
 
-const statusConfig: Record<
-  ProjectStatus,
-  { label: string; variant: "amber" | "green" | "red" }
-> = {
-  PROCESSING: { label: "Em andamento", variant: "amber" },
-  COMPLETED: { label: "Concluído", variant: "green" },
-  CANCELLED: { label: "Cancelado", variant: "red" },
-};
-
-const projectTypeLabels: Record<ProjectType, string> = {
-  DANINHAS: "Daninhas",
-  FALHAS: "Falhas",
-  RESTITUICAO: "Restituição",
-  MAPEAMENTO: "Mapeamento",
-};
-
-const cultureLabels: Record<Culture, string> = {
-  CANA: "Cana",
-  MILHO: "Milho",
-  SOJA: "Soja",
-  EUCALIPTO: "Eucalipto",
-  CAFE: "Café",
-  ALGODAO: "Algodão",
-};
-
-type TabValue = "all" | ProjectStatus;
+type TabValue = "all" | ProjectStatus | "archived";
 
 const tabs: { value: TabValue; label: string }[] = [
   { value: "all", label: "Todos" },
+  { value: "PENDING", label: "Pendentes" },
   { value: "PROCESSING", label: "Em andamento" },
   { value: "COMPLETED", label: "Concluídos" },
   { value: "CANCELLED", label: "Cancelados" },
+  { value: "archived", label: "Arquivados" },
 ];
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [counts, setCounts] = useState<StatusCounts>({
     all: 0,
+    PENDING: 0,
     PROCESSING: 0,
     COMPLETED: 0,
     CANCELLED: 0,
+    archived: 0,
   });
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -118,7 +108,12 @@ export default function AdminProjectsPage() {
       header: "Projeto",
       render: (project: Project) => (
         <div>
-          <p className="text-sm font-medium text-white">{project.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-white">{project.name}</p>
+            {project.isArchived && (
+              <StatusBadge label="Arquivado" variant="gray" />
+            )}
+          </div>
           <p className="text-xs text-zinc-500">
             {projectTypeLabels[project.projectType]} •{" "}
             {cultureLabels[project.culture]}
@@ -137,17 +132,33 @@ export default function AdminProjectsPage() {
       ),
     },
     {
-      key: "filesCount",
-      header: "Arquivos",
+      key: "area",
+      header: "Área",
       render: (project: Project) => (
-        <span className="text-sm text-zinc-300">{project.filesCount}</span>
+        <span className="text-sm text-zinc-300">
+          {project.area && parseFloat(project.area) > 0
+            ? `${parseFloat(project.area).toFixed(2)} ha`
+            : "—"}
+        </span>
       ),
     },
+    {
+      key: "price",
+      header: "Valor",
+      render: (project: Project) => (
+        <span className="text-sm text-zinc-300">
+          {project.price && parseFloat(project.price) > 0
+            ? `R$ ${parseFloat(project.price).toFixed(2)}`
+            : "—"}
+        </span>
+      ),
+    },
+    
     {
       key: "status",
       header: "Status",
       render: (project: Project) => {
-        const config = statusConfig[project.status] || {
+        const config = projectStatusConfig[project.status] || {
           label: project.status,
           variant: "gray" as const,
         };
@@ -169,7 +180,7 @@ export default function AdminProjectsPage() {
         <div>
           <h1 className="text-2xl font-bold">Projetos</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            {counts.all} projetos no total
+            {counts.all} projetos ativos • {counts.archived} arquivados
           </p>
         </div>
         <Link href="/projects/new">
@@ -189,9 +200,7 @@ export default function AdminProjectsPage() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={`relative px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "text-white"
-                    : "text-zinc-400 hover:text-zinc-300"
+                  isActive ? "text-white" : "text-zinc-400 hover:text-zinc-300"
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -199,7 +208,9 @@ export default function AdminProjectsPage() {
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs ${
                       isActive
-                        ? "bg-green-500/20 text-green-400"
+                        ? tab.value === "archived"
+                          ? "bg-zinc-700/50 text-zinc-400"
+                          : "bg-green-500/20 text-green-400"
                         : "bg-zinc-800 text-zinc-500"
                     }`}
                   >
@@ -230,7 +241,9 @@ export default function AdminProjectsPage() {
           <p className="text-zinc-400">
             {activeTab === "all"
               ? "Nenhum projeto encontrado"
-              : `Nenhum projeto com status "${statusConfig[activeTab as ProjectStatus]?.label}"`}
+              : activeTab === "archived"
+                ? "Nenhum projeto arquivado"
+                : `Nenhum projeto com status "${projectStatusConfig[activeTab]?.label}"`}
           </p>
           {activeTab !== "all" && (
             <button

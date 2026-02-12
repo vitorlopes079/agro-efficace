@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { DataTable, StatusBadge } from "@/components/ui";
+import { auditLogActionConfig } from "@/components/project";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -18,28 +19,15 @@ interface AuditLog {
   createdAt: string;
 }
 
-const getActionLabel = (action: string) => {
-  const labels: Record<
-    string,
-    { label: string; variant: "green" | "cyan" | "amber" | "red" | "gray" }
-  > = {
-    USER_LOGIN: { label: "Login", variant: "green" },
-    USER_INVITED: { label: "Convite Enviado", variant: "cyan" },
-    USER_ACCEPTED_INVITE: { label: "Convite Aceito", variant: "green" },
-    USER_ROLE_CHANGED: { label: "Role Alterado", variant: "amber" },
-    USER_SUSPENDED: { label: "Usuário Suspenso", variant: "red" },
-    USER_ACTIVATED: { label: "Usuário Ativado", variant: "green" },
-  };
-
-  return labels[action] || { label: action, variant: "gray" as const };
-};
-
 const columns = [
   {
     key: "action",
     header: "Ação",
     render: (log: AuditLog) => {
-      const actionInfo = getActionLabel(log.action);
+      const actionInfo = auditLogActionConfig[log.action] || {
+        label: log.action,
+        variant: "gray" as const,
+      };
       return (
         <StatusBadge label={actionInfo.label} variant={actionInfo.variant} />
       );

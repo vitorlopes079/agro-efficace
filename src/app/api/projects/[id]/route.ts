@@ -71,6 +71,7 @@ export async function GET(
         price: project.price.toString(),
         isPaid: project.isPaid,
         paidAt: project.paidAt?.toISOString() || null,
+        areaProcessed: project.areaProcessed?.toString() || null,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
         completedAt: project.completedAt?.toISOString() || null,

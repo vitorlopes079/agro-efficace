@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button, DataTable, StatusBadge } from "@/components/ui";
 import { InviteUserModal } from "@/components/admin/InviteUserModal";
+import { userStatusConfig } from "@/components/project";
 
 interface User {
   id: string;
@@ -56,15 +57,9 @@ const columns = [
     key: "status",
     header: "Status",
     render: (user: User) => {
-      const statusMap = {
-        active: { label: "Ativo", variant: "green" as const },
-        pending: { label: "Pendente", variant: "amber" as const },
-        inactive: { label: "Inativo", variant: "gray" as const },
-        suspended: { label: "Suspenso", variant: "red" as const },
-      };
-      const status =
-        statusMap[user.status as keyof typeof statusMap] || statusMap.inactive;
-      return <StatusBadge label={status.label} variant={status.variant} />;
+      const config =
+        userStatusConfig[user.status.toUpperCase()] || userStatusConfig.INACTIVE;
+      return <StatusBadge label={config.label} variant={config.variant} />;
     },
   },
   {

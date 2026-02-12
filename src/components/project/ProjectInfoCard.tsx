@@ -40,6 +40,16 @@ export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInf
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              Área Processada
+            </p>
+            <p className="mt-1 text-sm text-white">
+              {project.areaProcessed && parseFloat(project.areaProcessed) > 0
+                ? `${parseFloat(project.areaProcessed).toFixed(2)} ha`
+                : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
               Status
             </p>
             <div className="mt-1">

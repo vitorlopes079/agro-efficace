@@ -17,9 +17,12 @@ export interface ProjectData {
   price: string;
   isPaid: boolean;
   paidAt: string | null;
+  areaProcessed: string | null;
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  isArchived: boolean;
+  archivedAt?: string;
   user: {
     id: string;
     name: string;

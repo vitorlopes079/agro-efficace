@@ -14,7 +14,7 @@ function getClientIp(req: NextRequest): string {
 // GET project details (admin only)
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -40,10 +40,7 @@ export async function GET(
           },
         },
         files: {
-          orderBy: [
-            { fileCategory: "asc" },
-            { uploadedAt: "desc" },
-          ],
+          orderBy: [{ fileCategory: "asc" }, { uploadedAt: "desc" }],
         },
       },
     });
@@ -51,14 +48,18 @@ export async function GET(
     if (!project) {
       return NextResponse.json(
         { error: "Projeto não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Group files by category
     const filesGrouped = {
-      ortomosaico: project.files.filter((f) => f.fileCategory === "ORTOMOSAICO"),
-      perimetros: project.files.filter((f) => f.fileCategory === "PERIMETRO_ANALISE"),
+      ortomosaico: project.files.filter(
+        (f) => f.fileCategory === "ORTOMOSAICO",
+      ),
+      perimetros: project.files.filter(
+        (f) => f.fileCategory === "PERIMETRO_ANALISE",
+      ),
       outros: project.files.filter((f) => f.fileCategory === "OTHER"),
     };
 
@@ -73,6 +74,9 @@ export async function GET(
         price: project.price.toString(),
         isPaid: project.isPaid,
         paidAt: project.paidAt?.toISOString() || null,
+        areaProcessed: project.areaProcessed?.toString() || null,
+        isArchived: project.isArchived,
+        archivedAt: project.archivedAt?.toISOString() || null,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
         completedAt: project.completedAt?.toISOString() || null,
@@ -123,7 +127,7 @@ export async function GET(
     console.error("[ADMIN PROJECT API] Error:", error);
     return NextResponse.json(
       { error: "Erro ao buscar projeto" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -131,7 +135,7 @@ export async function GET(
 // PATCH update project (payment info, status, etc.)
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -154,15 +158,16 @@ export async function PATCH(
     if (!project) {
       return NextResponse.json(
         { error: "Projeto não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const updateData: {
       price?: number;
+      areaProcessed?: number;
       isPaid?: boolean;
       paidAt?: Date | null;
-      status?: "PROCESSING" | "COMPLETED" | "CANCELLED";
+      status?: "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
       completedAt?: Date | null;
     } = {};
 
@@ -170,12 +175,18 @@ export async function PATCH(
     if (body.price !== undefined) {
       const price = parseFloat(body.price);
       if (isNaN(price) || price < 0) {
-        return NextResponse.json(
-          { error: "Valor inválido" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
       }
       updateData.price = price;
+    }
+
+    // Handle area update
+    if (body.areaProcessed !== undefined) {
+      const area = parseFloat(body.areaProcessed);
+      if (isNaN(area) || area < 0) {
+        return NextResponse.json({ error: "Área inválida" }, { status: 400 });
+      }
+      updateData.areaProcessed = area;
     }
 
     // Handle payment status
@@ -190,12 +201,9 @@ export async function PATCH(
 
     // Handle project status
     if (body.status !== undefined) {
-      const validStatuses = ["PROCESSING", "COMPLETED", "CANCELLED"];
+      const validStatuses = ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"];
       if (!validStatuses.includes(body.status)) {
-        return NextResponse.json(
-          { error: "Status inválido" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Status inválido" }, { status: 400 });
       }
       updateData.status = body.status;
       if (body.status === "COMPLETED") {
@@ -235,6 +243,7 @@ export async function PATCH(
       project: {
         id: updatedProject.id,
         price: updatedProject.price.toString(),
+        areaProcessed: updatedProject.areaProcessed?.toString() || null,
         isPaid: updatedProject.isPaid,
         paidAt: updatedProject.paidAt?.toISOString() || null,
         status: updatedProject.status,
@@ -245,7 +254,7 @@ export async function PATCH(
     console.error("[ADMIN PROJECT API] Error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar projeto" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

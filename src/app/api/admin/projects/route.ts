@@ -1,4 +1,3 @@
-// src/app/api/admin/projects/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -19,10 +18,20 @@ export async function GET(req: NextRequest) {
 
     // Get query params
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status") as ProjectStatus | null;
+    const statusParam = searchParams.get("status");
+
+    // Check if requesting archived projects
+    const isArchivedTab = statusParam === "archived";
 
     // Build where clause
-    const where = status ? { status } : {};
+    const where = isArchivedTab
+      ? { isArchived: true as const }
+      : {
+          isArchived: false as const,
+          ...(statusParam && statusParam !== "all"
+            ? { status: statusParam as ProjectStatus }
+            : {}),
+        };
 
     // Fetch projects with user info
     const projects = await prisma.project.findMany({
@@ -34,6 +43,10 @@ export async function GET(req: NextRequest) {
         culture: true,
         status: true,
         notes: true,
+        isArchived: true,
+        archivedAt: true,
+        areaProcessed: true,
+        price: true,
         createdAt: true,
         completedAt: true,
         user: {
@@ -43,40 +56,49 @@ export async function GET(req: NextRequest) {
             email: true,
           },
         },
-        _count: {
-          select: {
-            files: true,
-          },
-        },
+        
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    // Get counts by status for tabs
+    // Get counts by status (excluding archived)
     const statusCounts = await prisma.project.groupBy({
       by: ["status"],
+      where: {
+        isArchived: false,
+      },
       _count: {
         status: true,
       },
     });
 
+    // Get archived count separately
+    const archivedCount = await prisma.project.count({
+      where: {
+        isArchived: true,
+      },
+    });
+
+    // Build counts object
     const counts = {
-      all: projects.length,
+      all: 0,
+      PENDING: 0,
       PROCESSING: 0,
       COMPLETED: 0,
       CANCELLED: 0,
+      archived: archivedCount,
     };
 
+    // Populate status counts (excluding archived)
     statusCounts.forEach((item) => {
       counts[item.status] = item._count.status;
     });
 
-    // If we're filtering, recalculate "all" from the grouped counts
-    if (!status) {
-      counts.all = Object.values(counts).reduce((a, b) => a + b, 0) - counts.all;
-    }
+    // Calculate "all" count (all non-archived projects)
+    counts.all =
+      counts.PENDING + counts.PROCESSING + counts.COMPLETED + counts.CANCELLED;
 
     // Format projects
     const formattedProjects = projects.map((project) => ({
@@ -86,12 +108,17 @@ export async function GET(req: NextRequest) {
       culture: project.culture,
       status: project.status,
       notes: project.notes,
+      isArchived: project.isArchived,
+      archivedAt: project.archivedAt
+        ? new Date(project.archivedAt).toLocaleDateString("pt-BR")
+        : null,
+      area: project.areaProcessed ? project.areaProcessed.toString() : null,
+      price: project.price.toString(),
       owner: {
         id: project.user.id,
         name: project.user.name,
         email: project.user.email,
       },
-      filesCount: project._count.files,
       createdAt: new Date(project.createdAt).toLocaleDateString("pt-BR"),
       completedAt: project.completedAt
         ? new Date(project.completedAt).toLocaleDateString("pt-BR")
@@ -106,7 +133,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching projects:", error);
     return NextResponse.json(
       { error: "Erro ao buscar projetos" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

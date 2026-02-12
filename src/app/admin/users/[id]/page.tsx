@@ -28,6 +28,7 @@ import {
   StatusBadge,
   useToast,
 } from "@/components/ui";
+import { userStatusConfig } from "@/components/project";
 
 type User = {
   id: string;
@@ -42,13 +43,6 @@ type User = {
   invitedAt: string | null;
   lastLoginAt: string | null;
   createdAt: string;
-};
-
-const statusConfig = {
-  PENDING: { label: "Pendente", variant: "amber" as const },
-  ACTIVE: { label: "Ativo", variant: "green" as const },
-  INACTIVE: { label: "Inativo", variant: "gray" as const },
-  SUSPENDED: { label: "Banido", variant: "red" as const },
 };
 
 export default function UserDetailPage() {
@@ -269,8 +263,8 @@ export default function UserDetailPage() {
               <h1 className="text-2xl font-bold text-white">{user.name}</h1>
               <div className="mt-1 flex items-center gap-3">
                 <StatusBadge
-                  label={statusConfig[user.status].label}
-                  variant={statusConfig[user.status].variant}
+                  label={userStatusConfig[user.status].label}
+                  variant={userStatusConfig[user.status].variant}
                 />
                 <span
                   className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${
