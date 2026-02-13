@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { r2Client, R2_BUCKET } from "@/lib/r2";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -254,6 +256,132 @@ export async function PATCH(
     console.error("[ADMIN PROJECT API] Error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar projeto" },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE project (admin only) - removes project and all files from R2
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  console.log("🗑️ [DELETE PROJECT] Starting project deletion...");
+
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      console.log("❌ [DELETE PROJECT] No session found");
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    if (session.user.role !== "ADMIN") {
+      console.log("❌ [DELETE PROJECT] User is not admin");
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    console.log(`📋 [DELETE PROJECT] Project ID: ${id}`);
+
+    // 1. Fetch project with files
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        files: true,
+      },
+    });
+
+    if (!project) {
+      console.log("❌ [DELETE PROJECT] Project not found");
+      return NextResponse.json(
+        { error: "Projeto não encontrado" },
+        { status: 404 },
+      );
+    }
+
+    console.log(`📊 [DELETE PROJECT] Found project: ${project.name}`);
+    console.log(`📁 [DELETE PROJECT] Files to delete: ${project.files.length}`);
+
+    // 2. Delete all files from R2
+    let deletedFilesCount = 0;
+    const deleteErrors: string[] = [];
+
+    for (const file of project.files) {
+      try {
+        console.log(`   🗑️ Deleting from R2: ${file.fileKey}`);
+
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: file.fileKey,
+        });
+
+        await r2Client.send(deleteCommand);
+        deletedFilesCount++;
+
+        console.log(`   ✅ Deleted: ${file.fileKey}`);
+      } catch (error) {
+        const errorMsg = `Failed to delete ${file.fileKey}: ${error instanceof Error ? error.message : "Unknown error"}`;
+        console.error(`   ❌ ${errorMsg}`);
+        deleteErrors.push(errorMsg);
+      }
+    }
+
+    console.log(
+      `📊 [DELETE PROJECT] R2 deletion complete: ${deletedFilesCount} files deleted, ${deleteErrors.length} errors`,
+    );
+
+    // 3. Delete project from database (cascades to files table)
+    console.log("💾 [DELETE PROJECT] Deleting project from database...");
+
+    await prisma.project.delete({
+      where: { id },
+    });
+
+    console.log("✅ [DELETE PROJECT] Project deleted from database");
+
+    // 4. Create audit log
+    console.log("📝 [DELETE PROJECT] Creating audit log...");
+
+    await prisma.auditLog.create({
+      data: {
+        action: "PROJECT_DELETED",
+        entityType: "Project",
+        entityId: id,
+        userId: session.user.id,
+        metadata: {
+          projectName: project.name,
+          projectType: project.projectType,
+          culture: project.culture,
+          filesCount: project.files.length,
+          deletedFilesCount,
+          errors: deleteErrors.length > 0 ? deleteErrors : undefined,
+        },
+        ipAddress: getClientIp(req),
+        userAgent: req.headers.get("user-agent") || null,
+      },
+    });
+
+    console.log("✅ [DELETE PROJECT] Audit log created");
+
+    const summary = {
+      success: true,
+      message: "Projeto deletado com sucesso",
+      filesDeleted: deletedFilesCount,
+      errors: deleteErrors,
+    };
+
+    console.log("🎉 [DELETE PROJECT] Project deletion completed successfully");
+    console.log(`📊 [DELETE PROJECT] Summary:`, summary);
+
+    return NextResponse.json(summary);
+  } catch (error) {
+    console.error("💥 [DELETE PROJECT] Unexpected error:", error);
+    return NextResponse.json(
+      {
+        error: "Erro ao deletar projeto",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }

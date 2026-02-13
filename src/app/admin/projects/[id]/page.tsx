@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, X, Archive, Play, CheckCircle } from "lucide-react";
+import { ArrowLeft, X, Archive, Play, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import {
   StatusBadge,
   Button,
@@ -13,6 +13,7 @@ import {
   CardContent,
   Input,
   useToast,
+  ConfirmDialog,
 } from "@/components/ui";
 import {
   ProjectInfoCard,
@@ -219,6 +220,10 @@ export default function AdminProjectDetailPage() {
   const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isRegisteringPayment, setIsRegisteringPayment] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -349,6 +354,64 @@ export default function AdminProjectDetailPage() {
     }
   };
 
+  const handleCancelProject = async () => {
+    if (!project) return;
+
+    setIsCanceling(true);
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Projeto cancelado com sucesso!");
+        setShowCancelDialog(false);
+        // Refresh project data
+        await fetchProject(project.id);
+      } else {
+        toast.error(data.error || "Erro ao cancelar projeto");
+      }
+    } catch (error) {
+      console.error("Error canceling project:", error);
+      toast.error("Erro ao cancelar projeto");
+    } finally {
+      setIsCanceling(false);
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    if (!project) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(
+          "Projeto deletado com sucesso!",
+          `${data.filesDeleted} arquivos removidos do armazenamento`,
+        );
+        // Redirect to projects list after deletion
+        router.push("/admin/projects");
+      } else {
+        toast.error(data.error || "Erro ao deletar projeto");
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Erro ao deletar projeto");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -448,6 +511,15 @@ export default function AdminProjectDetailPage() {
               Finalizar Projeto
             </Button>
           )}
+          {project.status !== "CANCELLED" && (
+            <Button
+              variant="secondary"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              <XCircle className="h-4 w-4" />
+              Cancelar Projeto
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => setIsArchiveModalOpen(true)}
@@ -455,6 +527,14 @@ export default function AdminProjectDetailPage() {
           >
             <Archive className="h-4 w-4" />
             {project.isArchived ? "Arquivado" : "Arquivar"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteDialog(true)}
+            className="border-red-800 text-red-400 hover:bg-red-500/10 hover:border-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+            Deletar Projeto
           </Button>
         </div>
       </div>
@@ -569,6 +649,60 @@ export default function AdminProjectDetailPage() {
         onClose={() => setIsProcessingModalOpen(false)}
         project={project}
         onSave={handleStartProcessing}
+      />
+
+      {/* Cancel Project Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={handleCancelProject}
+        title="Cancelar Projeto"
+        description={
+          <>
+            Tem certeza que deseja cancelar o projeto{" "}
+            <strong>{project.name}</strong>?
+            <br />
+            <br />
+            O status será alterado para <strong>Cancelado</strong>. Os arquivos
+            permanecerão no armazenamento e você poderá reativar o projeto
+            posteriormente se necessário.
+          </>
+        }
+        confirmText="Cancelar Projeto"
+        cancelText="Voltar"
+        variant="warning"
+        isLoading={isCanceling}
+      />
+
+      {/* Delete Project Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteProject}
+        title="Deletar Projeto Permanentemente"
+        description={
+          <>
+            <strong className="text-red-400">⚠️ ATENÇÃO: Esta ação é irreversível!</strong>
+            <br />
+            <br />
+            Você está prestes a deletar permanentemente o projeto{" "}
+            <strong>{project.name}</strong>.
+            <br />
+            <br />
+            Isso irá:
+            <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+              <li>Remover todos os arquivos do armazenamento (R2)</li>
+              <li>Deletar o projeto e seus dados do banco de dados</li>
+              <li>Impossibilitar a recuperação dos dados</li>
+            </ul>
+            <br />
+            <strong>Esta ação não pode ser desfeita.</strong>
+          </>
+        }
+        confirmText="Deletar Permanentemente"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );
