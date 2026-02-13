@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderOpen, Users, ScrollText } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Users, ScrollText, Settings } from "lucide-react";
 import { Header, Sidebar } from "@/components/layout";
 
 const navItems = [
@@ -21,6 +21,11 @@ const navItems = [
     label: "Logs de Auditoria",
     href: "/admin/logs",
     icon: <ScrollText className="h-5 w-5" />,
+  },
+  {
+    label: "Configurações",
+    href: "/admin/settings",
+    icon: <Settings className="h-5 w-5" />,
   },
 ];
 

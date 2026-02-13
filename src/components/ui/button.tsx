@@ -17,8 +17,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
     "bg-linear-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:brightness-110",
-  secondary:
-    "border border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700",
+  secondary: "border border-zinc-700 bg-zinc-800 text-white hover:bg-zinc-700",
   ghost: "text-zinc-400 hover:text-white hover:bg-zinc-800",
 };
 
@@ -36,10 +35,12 @@ export function Button({
   loading = false,
   disabled,
   className = "",
+  type = "button", // ← ADICIONE ISTO
   ...props
 }: ButtonProps) {
   return (
     <button
+      type={type} // ← ADICIONE ISTO
       disabled={disabled || loading}
       className={`
         inline-flex items-center justify-center gap-2 rounded-lg font-semibold

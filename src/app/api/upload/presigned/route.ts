@@ -43,6 +43,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check storage limit for orphan files
+    console.log("📊 [PRESIGNED] Checking storage limit...");
+
+    // 1. Get the system storage limit
+    const systemSettings = await prisma.systemSettings.findFirst();
+    const limitGb = systemSettings?.orphanFilesLimitGb || 5;
+    const limitBytes = limitGb * 1024 * 1024 * 1024; // Convert GB to bytes
+
+    console.log(`⚙️ [PRESIGNED] Storage limit: ${limitGb}GB (${limitBytes} bytes)`);
+
+    // 2. Calculate how much storage user is currently using (orphan files only)
+    const orphanFilesSize = await prisma.pendingUpload.aggregate({
+      where: {
+        userId: session.user.id,
+        status: 'UPLOADED' // Only count files that are uploaded but not in projects yet
+      },
+      _sum: {
+        fileSize: true
+      }
+    });
+
+    const currentUsageBytes = Number(orphanFilesSize._sum.fileSize || 0);
+    const newTotalBytes = currentUsageBytes + fileSize;
+
+    const currentUsageGb = (currentUsageBytes / (1024 * 1024 * 1024)).toFixed(2);
+    const newTotalGb = (newTotalBytes / (1024 * 1024 * 1024)).toFixed(2);
+
+    console.log(`💾 [PRESIGNED] Current usage: ${currentUsageGb}GB, After upload: ${newTotalGb}GB`);
+
+    // 3. If adding this file would exceed the limit, reject it
+   if (newTotalBytes > limitBytes) {
+     console.log(
+       `❌ [PRESIGNED] Storage limit exceeded: ${newTotalGb}GB > ${limitGb}GB`,
+     );
+     return NextResponse.json(
+       {
+         error: `Limite de armazenamento excedido. Entre em contato com o administrador para prosseguir ou tente novamente mais tarde.`,
+         code: "STORAGE_LIMIT_EXCEEDED",
+         currentUsage: parseFloat(currentUsageGb),
+         limit: limitGb,
+       },
+       { status: 403 },
+     );
+   }
+
+    console.log(`✅ [PRESIGNED] Storage check passed: ${newTotalGb}GB <= ${limitGb}GB`);
+
     const fileId = crypto.randomBytes(16).toString("hex");
     const fileExtension = fileName.split(".").pop();
     const fileKey = `pending/${session.user.id}/${fileId}.${fileExtension}`;

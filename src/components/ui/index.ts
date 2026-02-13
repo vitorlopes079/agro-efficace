@@ -7,6 +7,7 @@ export {
   CardContent,
   CardFooter,
 } from "./card";
+export { ConfirmDialog, useConfirmDialog } from "./confirm-dialog";
 export { DataTable } from "./data-table";
 export { InfoTooltip } from "./info-tooltip";
 export { Input } from "./input";
