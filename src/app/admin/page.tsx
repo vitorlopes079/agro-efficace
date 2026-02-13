@@ -1,7 +1,14 @@
 // src/app/admin/page.tsx
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  InfoTooltip,
+} from "@/components/ui";
 import {
   LineChart,
   Line,
@@ -13,28 +20,68 @@ import {
 } from "recharts";
 import { ReceitaPorCulturaChart } from "@/components/charts/ReceitaPorCulturaChart";
 
-// Dados mock - virão do banco depois
-const receitaMensal = [
-  { mes: "Jan", receita: 12400 },
-  { mes: "Fev", receita: 15800 },
-  { mes: "Mar", receita: 18200 },
-  { mes: "Abr", receita: 16900 },
-  { mes: "Mai", receita: 21500 },
-  { mes: "Jun", receita: 23100 },
-];
+interface MonthlyRevenue {
+  mes: string;
+  receita: number;
+}
 
-const receitaPorCultura = [
-  { cultura: "Cana", valor: 45000, porcentagem: 38 },
-  { cultura: "Milho", valor: 32000, porcentagem: 27 },
-  { cultura: "Soja", valor: 28000, porcentagem: 24 },
-  { cultura: "Eucalipto", valor: 13000, porcentagem: 11 },
-];
+interface CultureRevenue {
+  cultura: string;
+  valor: number;
+  porcentagem: number;
+}
+
+interface AdminStats {
+  totalRevenue: number;
+  activeUsers: number;
+  newUsersThisWeek: number;
+  totalProjects: number;
+  projectsThisMonth: number;
+  monthlyRevenue: MonthlyRevenue[];
+  revenueByCulture: CultureRevenue[];
+}
 
 export default function AdminDashboard() {
-  const receitaTotal = receitaPorCultura.reduce(
-    (acc, item) => acc + item.valor,
-    0,
-  );
+  const [stats, setStats] = useState<AdminStats>({
+    totalRevenue: 0,
+    activeUsers: 0,
+    newUsersThisWeek: 0,
+    totalProjects: 0,
+    projectsThisMonth: 0,
+    monthlyRevenue: [],
+    revenueByCulture: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/admin/stats");
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📊 Stats data received:", data); // ← ADD THIS
+        setStats(data);
+      } else {
+        console.error("Error fetching stats:", await response.json());
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-zinc-400">Carregando estatísticas...</div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -44,33 +91,50 @@ export default function AdminDashboard() {
       <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Receita Total</CardTitle>
+            <CardTitle className="flex items-center">
+              Receita Total
+              <InfoTooltip text="Dinheiro total recebido de projetos que foram finalizados e pagos" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold">
-              R$ {(receitaTotal / 1000).toFixed(0)}k
+              {stats.totalRevenue > 0
+                ? `R$ ${(stats.totalRevenue / 1000).toFixed(1)}k`
+                : "R$ 0"}
             </p>
-            <p className="mt-1 text-sm text-zinc-400">Últimos 6 meses</p>
+            <p className="mt-1 text-sm text-zinc-400">Projetos pagos</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Usuários Ativos</CardTitle>
+            <CardTitle className="flex items-center">
+              Usuários Ativos
+              <InfoTooltip text="Usuários que criaram algum projeto nos últimos 30 dias" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">48</p>
-            <p className="mt-1 text-sm text-zinc-400">5 novos esta semana</p>
+            <p className="text-4xl font-bold">{stats.activeUsers}</p>
+            <p className="mt-1 flex items-center text-sm text-zinc-400">
+              {stats.newUsersThisWeek} novos esta semana
+              <InfoTooltip text="Usuários que se cadastraram nos últimos 7 dias" />
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Total de Projetos</CardTitle>
+            <CardTitle className="flex items-center">
+              Total de Projetos
+              <InfoTooltip text="Todos os projetos já criados, independente do status" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">124</p>
-            <p className="mt-1 text-sm text-zinc-400">32 projetos este mês</p>
+            <p className="text-4xl font-bold">{stats.totalProjects}</p>
+            <p className="mt-1 flex items-center text-sm text-zinc-400">
+              {stats.projectsThisMonth} projetos este mês
+              <InfoTooltip text="Projetos criados desde o primeiro dia do mês atual" />
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -80,49 +144,77 @@ export default function AdminDashboard() {
         {/* Receita Mensal */}
         <Card>
           <CardHeader>
-            <CardTitle>Receita Mensal</CardTitle>
+            <CardTitle className="flex items-center">
+              Receita Mensal
+              <InfoTooltip text="Dinheiro recebido por mês de projetos finalizados e pagos nos últimos 6 meses" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={receitaMensal}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis
-                  dataKey="mes"
-                  stroke="#71717a"
-                  style={{ fontSize: "12px" }}
-                />
-                <YAxis
-                  stroke="#71717a"
-                  style={{ fontSize: "12px" }}
-                  tickFormatter={(value: number) => `R$ ${value / 1000}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#18181b",
-                    border: "1px solid #27272a",
-                    borderRadius: "8px",
-                    color: "#fff",
-                  }}
-                  formatter={(value) => [
-                    `R$ ${Number(value).toLocaleString()}`,
-                    "Receita",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="receita"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ fill: "#10b981", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {stats.monthlyRevenue.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={stats.monthlyRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                  <XAxis
+                    dataKey="mes"
+                    stroke="#71717a"
+                    style={{ fontSize: "12px" }}
+                  />
+                  <YAxis
+                    stroke="#71717a"
+                    style={{ fontSize: "12px" }}
+                    tickFormatter={(value: number) => `R$ ${value / 1000}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#18181b",
+                      border: "1px solid #27272a",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value) => [
+                      `R$ ${Number(value).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`,
+                      "Receita",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="receita"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ fill: "#10b981", r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-zinc-500">
+                Nenhum dado disponível ainda
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Receita por Cultura */}
-        <ReceitaPorCulturaChart data={receitaPorCultura} />
+        {stats.revenueByCulture.length > 0 ? (
+          <ReceitaPorCulturaChart data={stats.revenueByCulture} />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                Receita por Cultura
+                <InfoTooltip text="Total de dinheiro recebido dividido por tipo de cultura (somente projetos finalizados e pagos)" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex h-[300px] items-center justify-center text-zinc-500">
+                Nenhum dado disponível ainda
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

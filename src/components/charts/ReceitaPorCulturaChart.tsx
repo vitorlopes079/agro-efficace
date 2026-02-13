@@ -1,7 +1,13 @@
 // src/components/charts/ReceitaPorCulturaChart.tsx
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  InfoTooltip,
+} from "@/components/ui";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 interface ReceitaCultura {
@@ -14,13 +20,23 @@ interface ReceitaPorCulturaChartProps {
   data: ReceitaCultura[];
 }
 
-const COLORS = ["#10b981", "#f59e0b", "#3b82f6", "#8b5cf6"];
+const COLORS = [
+  "#10b981",
+  "#f59e0b",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+];
 
 export function ReceitaPorCulturaChart({ data }: ReceitaPorCulturaChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Receita por Cultura</CardTitle>
+        <CardTitle className="flex items-center">
+          Receita por Cultura
+          <InfoTooltip text="Total de dinheiro recebido dividido por tipo de cultura (somente projetos finalizados e pagos)" />
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -83,7 +99,7 @@ export function ReceitaPorCulturaChart({ data }: ReceitaPorCulturaChartProps) {
             <div key={item.cultura} className="flex items-center gap-2">
               <div
                 className="h-3 w-3 flex-shrink-0 rounded-full"
-                style={{ backgroundColor: COLORS[index] }}
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
               />
               <span className="text-xs text-zinc-400">
                 {item.cultura}: R$ {(item.valor / 1000).toFixed(0)}k

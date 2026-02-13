@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export async function GET(req: NextRequest) {
   try {
     // Verificar autenticação
@@ -18,7 +20,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    // Buscar usuários
+    // Parse pagination params
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10)));
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await prisma.user.count();
+
+    // Buscar usuários com paginação
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -32,6 +43,8 @@ export async function GET(req: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
 
     // Formatar dados
@@ -47,7 +60,17 @@ export async function GET(req: NextRequest) {
       createdAt: new Date(user.createdAt).toLocaleDateString("pt-BR"),
     }));
 
-    return NextResponse.json({ users: formattedUsers });
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      users: formattedUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(

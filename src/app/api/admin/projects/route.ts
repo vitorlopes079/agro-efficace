@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProjectStatus } from "@/generated/client";
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,6 +21,9 @@ export async function GET(req: NextRequest) {
     // Get query params
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get("status");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10)));
+    const skip = (page - 1) * limit;
 
     // Check if requesting archived projects
     const isArchivedTab = statusParam === "archived";
@@ -33,7 +38,10 @@ export async function GET(req: NextRequest) {
             : {}),
         };
 
-    // Fetch projects with user info
+    // Get total count for current filter
+    const filteredTotal = await prisma.project.count({ where });
+
+    // Fetch projects with user info and pagination
     const projects = await prisma.project.findMany({
       where,
       select: {
@@ -56,11 +64,13 @@ export async function GET(req: NextRequest) {
             email: true,
           },
         },
-        
+
       },
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
 
     // Get counts by status (excluding archived)
@@ -125,9 +135,17 @@ export async function GET(req: NextRequest) {
         : null,
     }));
 
+    const totalPages = Math.ceil(filteredTotal / limit);
+
     return NextResponse.json({
       projects: formattedProjects,
       counts,
+      pagination: {
+        page,
+        limit,
+        total: filteredTotal,
+        totalPages,
+      },
     });
   } catch (error) {
     console.error("Error fetching projects:", error);

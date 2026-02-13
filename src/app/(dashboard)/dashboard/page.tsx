@@ -134,6 +134,13 @@ interface Stats {
   balanceToPay: number;
 }
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function Home() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -145,17 +152,23 @@ export default function Home() {
     area: { thisMonth: 0, allTime: 0 },
     balanceToPay: 0,
   });
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(pagination.page);
+  }, [pagination.page]);
 
-  const fetchData = async () => {
+  const fetchData = async (page: number) => {
     setIsLoading(true);
     try {
       // Fetch projects and stats in parallel
       const [projectsRes, statsRes] = await Promise.all([
-        fetch("/api/projects"),
+        fetch(`/api/projects?page=${page}&limit=${pagination.limit}`),
         fetch("/api/projects/stats"),
       ]);
 
@@ -166,6 +179,7 @@ export default function Home() {
 
       if (projectsRes.ok) {
         setProjects(projectsData.projects);
+        setPagination(projectsData.pagination);
       } else {
         console.error("Error fetching projects:", projectsData.error);
       }
@@ -180,6 +194,10 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   if (isLoading) {
@@ -261,10 +279,10 @@ export default function Home() {
           </button>
         )}
         pagination={{
-          showing: projects.length,
-          total: projects.length,
-          hasPrevious: false,
-          hasNext: false,
+          page: pagination.page,
+          totalPages: pagination.totalPages,
+          total: pagination.total,
+          onPageChange: handlePageChange,
         }}
       />
     </main>

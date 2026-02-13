@@ -56,6 +56,13 @@ const tabs: { value: TabValue; label: string }[] = [
   { value: "archived", label: "Arquivados" },
 ];
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [counts, setCounts] = useState<StatusCounts>({
@@ -68,21 +75,32 @@ export default function AdminProjectsPage() {
   });
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
-    fetchProjects();
+    fetchProjects(1); // Reset to page 1 when tab changes
   }, [activeTab]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (page: number) => {
     setIsLoading(true);
     try {
-      const statusParam = activeTab !== "all" ? `?status=${activeTab}` : "";
-      const response = await fetch(`/api/admin/projects${statusParam}`);
+      const params = new URLSearchParams();
+      if (activeTab !== "all") params.set("status", activeTab);
+      params.set("page", String(page));
+      params.set("limit", String(pagination.limit));
+
+      const response = await fetch(`/api/admin/projects?${params.toString()}`);
       const data = await response.json();
 
       if (response.ok) {
         setProjects(data.projects);
         setCounts(data.counts);
+        setPagination(data.pagination);
       } else {
         console.error("Error fetching projects:", data.error);
       }
@@ -91,6 +109,10 @@ export default function AdminProjectsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    fetchProjects(newPage);
   };
 
   const columns = [
@@ -267,6 +289,12 @@ export default function AdminProjectsPage() {
               </Button>
             </Link>
           )}
+          pagination={{
+            page: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total,
+            onPageChange: handlePageChange,
+          }}
         />
       )}
     </div>

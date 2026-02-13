@@ -78,24 +78,38 @@ const columns = [
   },
 ];
 
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function AdminUsersPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [isFetching, setIsFetching] = useState(true);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
-  // Buscar usuários ao carregar a página
+  // Buscar usuários ao carregar a página ou mudar de página
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(pagination.page);
+  }, [pagination.page]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number) => {
     setIsFetching(true);
     try {
-      const response = await fetch("/api/admin/users");
+      const response = await fetch(`/api/admin/users?page=${page}&limit=${pagination.limit}`);
       const data = await response.json();
 
       if (response.ok) {
         setUsers(data.users);
+        setPagination(data.pagination);
       } else {
         console.error("Error fetching users:", data.error);
       }
@@ -104,6 +118,10 @@ export default function AdminUsersPage() {
     } finally {
       setIsFetching(false);
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleInviteUser = async (userData: {
@@ -158,9 +176,9 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
           <p className="mt-1 text-sm text-zinc-400">
-            {users.length} {users.length === 1 ? "usuário" : "usuários"}{" "}
+            {pagination.total} {pagination.total === 1 ? "usuário" : "usuários"}{" "}
             cadastrado
-            {users.length !== 1 ? "s" : ""}
+            {pagination.total !== 1 ? "s" : ""}
           </p>
         </div>
         <Button onClick={() => setIsInviteModalOpen(true)}>Convidar</Button>
@@ -177,6 +195,12 @@ export default function AdminUsersPage() {
             </Button>
           </Link>
         )}
+        pagination={{
+          page: pagination.page,
+          totalPages: pagination.totalPages,
+          total: pagination.total,
+          onPageChange: handlePageChange,
+        }}
       />
 
       <InviteUserModal

@@ -2,6 +2,27 @@
 
 import { ReactNode } from "react";
 
+function generatePageNumbers(
+  currentPage: number,
+  totalPages: number
+): (number | "...")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: (number | "...")[] = [];
+
+  if (currentPage <= 3) {
+    pages.push(1, 2, 3, 4, "...", totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+  } else {
+    pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+  }
+
+  return pages;
+}
+
 interface Column<T> {
   key: string;
   header: string;
@@ -16,12 +37,10 @@ interface DataTableProps<T> {
   keyExtractor: (item: T) => string;
   actions?: ReactNode;
   pagination?: {
-    showing: number;
+    page: number;
+    totalPages: number;
     total: number;
-    onPrevious?: () => void;
-    onNext?: () => void;
-    hasPrevious?: boolean;
-    hasNext?: boolean;
+    onPageChange: (page: number) => void;
   };
   rowAction?: (item: T) => ReactNode;
   onRowClick?: (item: T) => void;
@@ -105,26 +124,50 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {pagination && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-zinc-800 px-6 py-4">
           <p className="text-sm text-zinc-500">
-            Mostrando{" "}
-            <span className="font-medium text-zinc-300">{pagination.showing}</span>{" "}
-            de <span className="font-medium text-zinc-300">{pagination.total}</span>{" "}
-            projetos
+            Página{" "}
+            <span className="font-medium text-zinc-300">{pagination.page}</span>{" "}
+            de{" "}
+            <span className="font-medium text-zinc-300">{pagination.totalPages}</span>{" "}
+            ({pagination.total} itens)
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
-              onClick={pagination.onPrevious}
-              disabled={pagination.hasPrevious === false}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
+              onClick={() => pagination.onPageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
             </button>
+            {generatePageNumbers(pagination.page, pagination.totalPages).map(
+              (pageNum, index) =>
+                pageNum === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="px-2 text-xs text-zinc-500"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={pageNum}
+                    onClick={() => pagination.onPageChange(pageNum as number)}
+                    className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors ${
+                      pagination.page === pageNum
+                        ? "bg-emerald-600 text-white"
+                        : "border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+            )}
             <button
-              onClick={pagination.onNext}
-              disabled={pagination.hasNext === false}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
+              onClick={() => pagination.onPageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Próximo
             </button>

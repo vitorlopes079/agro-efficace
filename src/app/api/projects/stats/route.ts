@@ -13,11 +13,9 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    // Get first day of current month
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Completed projects count - all time
     const projectsAllTime = await prisma.project.count({
       where: {
         userId,
@@ -25,7 +23,6 @@ export async function GET() {
       },
     });
 
-    // Completed projects count - this month
     const projectsThisMonth = await prisma.project.count({
       where: {
         userId,
@@ -36,7 +33,6 @@ export async function GET() {
       },
     });
 
-    // Area processed from completed projects - all time
     const areaAllTimeResult = await prisma.project.aggregate({
       where: {
         userId,
@@ -47,7 +43,6 @@ export async function GET() {
       },
     });
 
-    // Area processed from completed projects - this month
     const areaThisMonthResult = await prisma.project.aggregate({
       where: {
         userId,
@@ -61,10 +56,12 @@ export async function GET() {
       },
     });
 
-    // Balance to pay (sum of price where isPaid = false)
+    // Balance to pay (sum of price from COMPLETED projects where isPaid = false)
+    // This is always all time, not filtered by month
     const balanceResult = await prisma.project.aggregate({
       where: {
         userId,
+        status: "COMPLETED",
         isPaid: false,
       },
       _sum: {
@@ -87,7 +84,7 @@ export async function GET() {
     console.error("[STATS API] Error:", error);
     return NextResponse.json(
       { error: "Erro ao buscar estatísticas" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

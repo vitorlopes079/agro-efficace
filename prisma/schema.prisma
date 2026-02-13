@@ -151,14 +151,14 @@ model File {
   fileType  String
   fileKey   String
   
-  fileCategory FileCategory @default(OTHER)  // ← ADICIONAR ESTA LINHA
+  fileCategory FileCategory @default(OTHER) 
   
   uploadedAt DateTime @default(now())
   uploadedBy String
   uploader   User     @relation(fields: [uploadedBy], references: [id])
   
   @@index([projectId])
-  @@index([fileCategory])  // ← ADICIONAR ESTE ÍNDICE
+  @@index([fileCategory]) 
   @@map("files")
 }
 
@@ -219,7 +219,7 @@ enum Culture {
 }
 
 enum ProjectStatus {
-  PENDING      // ← NOVO
+  PENDING      
   PROCESSING
   COMPLETED
   CANCELLED

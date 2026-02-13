@@ -8,6 +8,7 @@ export {
   CardFooter,
 } from "./card";
 export { DataTable } from "./data-table";
+export { InfoTooltip } from "./info-tooltip";
 export { Input } from "./input";
 export { LoadingOverlay, CreatingProjectOverlay } from "./loading-overlay";
 export { SearchInput } from "./search-input";

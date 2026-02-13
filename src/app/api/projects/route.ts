@@ -316,6 +316,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export async function GET(req: NextRequest) {
   console.log("🚀 [PROJECT API] Fetching projects...");
 
@@ -334,9 +336,20 @@ export async function GET(req: NextRequest) {
     const isAdmin = session.user.role === "ADMIN";
     console.log("🔐 [PROJECT API] Is admin:", isAdmin);
 
+    // Parse pagination params
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10)));
+    const skip = (page - 1) * limit;
+
+    const whereClause = isAdmin ? {} : { userId: session.user.id };
+
+    // Get total count
+    const total = await prisma.project.count({ where: whereClause });
+
     console.log("💾 [PROJECT API] Querying database...");
     const projects = await prisma.project.findMany({
-      where: isAdmin ? {} : { userId: session.user.id },
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -353,6 +366,8 @@ export async function GET(req: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
     console.log(`✅ [PROJECT API] Found ${projects.length} projects`);
 
@@ -373,8 +388,18 @@ export async function GET(req: NextRequest) {
       completedAt: project.completedAt?.toISOString() || null,
     }));
 
+    const totalPages = Math.ceil(total / limit);
+
     console.log("🎉 [PROJECT API] Projects fetch completed");
-    return NextResponse.json({ projects: formattedProjects });
+    return NextResponse.json({
+      projects: formattedProjects,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    });
   } catch (error) {
     console.error("💥 [PROJECT API] Unexpected error:", error);
     return NextResponse.json(
