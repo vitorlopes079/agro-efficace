@@ -3,7 +3,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { ChevronDown, LogOut, User as UserIcon } from "lucide-react";
+import { ChevronDown, LogOut, KeyRound } from "lucide-react";
+import Link from "next/link";
 
 interface UserMenuProps {
   user: {
@@ -60,6 +61,14 @@ export function UserMenu({ user }: UserMenuProps) {
 
           {/* Menu Items */}
           <div className="py-1">
+            <Link
+              href="/change-password"
+              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
+              onClick={() => setIsOpen(false)}
+            >
+              <KeyRound className="h-4 w-4" />
+              Alterar Senha
+            </Link>
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
