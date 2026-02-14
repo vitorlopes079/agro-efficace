@@ -339,15 +339,69 @@ export async function GET(req: NextRequest) {
     // Parse pagination params
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10)));
+    const limit = Math.max(
+      1,
+      Math.min(
+        100,
+        parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10),
+      ),
+    );
     const skip = (page - 1) * limit;
+    const search = searchParams.get("search")?.trim();
 
-    const whereClause = isAdmin ? {} : { userId: session.user.id };
+    console.log(
+      `📊 [PROJECT API] Pagination - Page: ${page}, Limit: ${limit}, Skip: ${skip}`,
+    );
+    console.log(`🔍 [PROJECT API] Search query: "${search || "none"}"`);
+
+    // Build where clause with search
+    const whereClause: any = isAdmin ? {} : { userId: session.user.id };
+
+    if (search) {
+      console.log("🔍 [PROJECT API] Adding search filters...");
+
+      const searchUpper = search.toUpperCase();
+
+      // Build OR conditions
+      const orConditions: any[] = [
+        // Search in name (String field - supports contains)
+        { name: { contains: search, mode: "insensitive" } },
+      ];
+
+      // Check if search matches any Culture enum value
+      const cultures = [
+        "CANA",
+        "MILHO",
+        "SOJA",
+        "EUCALIPTO",
+        "CAFE",
+        "ALGODAO",
+      ];
+      const matchingCulture = cultures.find((c) => c.includes(searchUpper));
+      if (matchingCulture) {
+        orConditions.push({ culture: matchingCulture });
+      }
+
+      // Check if search matches any ProjectType enum value
+      const projectTypes = ["DANINHAS", "FALHAS", "RESTITUICAO", "MAPEAMENTO"];
+      const matchingProjectType = projectTypes.find((pt) =>
+        pt.includes(searchUpper),
+      );
+      if (matchingProjectType) {
+        orConditions.push({ projectType: matchingProjectType });
+      }
+
+      whereClause.OR = orConditions;
+    }
+
+    console.log("💾 [PROJECT API] Where clause:", JSON.stringify(whereClause));
 
     // Get total count
+    console.log("🔢 [PROJECT API] Counting total projects...");
     const total = await prisma.project.count({ where: whereClause });
+    console.log(`✅ [PROJECT API] Total projects: ${total}`);
 
-    console.log("💾 [PROJECT API] Querying database...");
+    console.log("💾 [PROJECT API] Querying database for projects...");
     const projects = await prisma.project.findMany({
       where: whereClause,
       include: {
@@ -390,7 +444,7 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
-    console.log("🎉 [PROJECT API] Projects fetch completed");
+    console.log("🎉 [PROJECT API] Projects fetch completed successfully");
     return NextResponse.json({
       projects: formattedProjects,
       pagination: {
@@ -402,8 +456,19 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("💥 [PROJECT API] Unexpected error:", error);
+    console.error(
+      "💥 [PROJECT API] Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
+    console.error("💥 [PROJECT API] Error details:", {
+      name: error instanceof Error ? error.name : "Unknown",
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
-      { error: "Erro ao buscar projetos" },
+      {
+        error: "Erro ao buscar projetos",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 },
     );
   }

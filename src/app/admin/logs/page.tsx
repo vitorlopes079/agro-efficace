@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DataTable, StatusBadge } from "@/components/ui";
+import { DataTable, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { auditLogActionConfig } from "@/components/project";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -104,11 +104,7 @@ export default function AdminLogsPage() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-zinc-400">Carregando logs...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando logs..." minHeight="400px" />;
   }
 
   return (

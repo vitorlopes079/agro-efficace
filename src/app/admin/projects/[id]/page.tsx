@@ -14,6 +14,7 @@ import {
   Input,
   useToast,
   ConfirmDialog,
+  LoadingSpinner,
 } from "@/components/ui";
 import {
   ProjectInfoCard,
@@ -413,14 +414,7 @@ export default function AdminProjectDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-green-500 border-t-transparent mx-auto" />
-          <p className="text-zinc-400">Carregando projeto...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando projeto..." minHeight="400px" />;
   }
 
   if (error) {

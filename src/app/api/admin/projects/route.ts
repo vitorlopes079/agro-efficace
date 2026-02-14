@@ -21,25 +21,73 @@ export async function GET(req: NextRequest) {
     // Get query params
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get("status");
+    const search = searchParams.get("search");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10)));
+    const limit = Math.max(
+      1,
+      Math.min(
+        100,
+        parseInt(searchParams.get("limit") || String(DEFAULT_PAGE_SIZE), 10),
+      ),
+    );
     const skip = (page - 1) * limit;
+
+    console.log("🚀 [API] Query params:", { statusParam, search, page, limit });
 
     // Check if requesting archived projects
     const isArchivedTab = statusParam === "archived";
 
     // Build where clause
-    const where = isArchivedTab
-      ? { isArchived: true as const }
+    const where: any = isArchivedTab
+      ? { isArchived: true }
       : {
-          isArchived: false as const,
+          isArchived: false,
           ...(statusParam && statusParam !== "all"
             ? { status: statusParam as ProjectStatus }
             : {}),
         };
 
+    // Add search filter if provided
+    if (search && search.trim()) {
+      console.log("🔍 [API] Adding search filter:", search.trim());
+      const searchTerm = search.trim();
+      where.OR = [
+        { name: { contains: searchTerm, mode: "insensitive" } },
+        { user: { name: { contains: searchTerm, mode: "insensitive" } } },
+        { user: { email: { contains: searchTerm, mode: "insensitive" } } },
+      ];
+
+      // Check if search matches any Culture enum value
+      const cultures = [
+        "CANA",
+        "MILHO",
+        "SOJA",
+        "EUCALIPTO",
+        "CAFE",
+        "ALGODAO",
+      ];
+      const matchingCulture = cultures.find((c) =>
+        c.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+      if (matchingCulture) {
+        where.OR.push({ culture: matchingCulture });
+      }
+
+      // Check if search matches any ProjectType enum value
+      const projectTypes = ["DANINHAS", "FALHAS", "RESTITUICAO", "MAPEAMENTO"];
+      const matchingProjectType = projectTypes.find((pt) =>
+        pt.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+      if (matchingProjectType) {
+        where.OR.push({ projectType: matchingProjectType });
+      }
+    }
+
+    console.log("📋 [API] Where clause:", JSON.stringify(where, null, 2));
+
     // Get total count for current filter
     const filteredTotal = await prisma.project.count({ where });
+    console.log("✅ [API] Filtered total:", filteredTotal);
 
     // Fetch projects with user info and pagination
     const projects = await prisma.project.findMany({
@@ -64,7 +112,6 @@ export async function GET(req: NextRequest) {
             email: true,
           },
         },
-
       },
       orderBy: {
         createdAt: "desc",
@@ -136,6 +183,11 @@ export async function GET(req: NextRequest) {
     }));
 
     const totalPages = Math.ceil(filteredTotal / limit);
+
+    console.log("🎉 [API] Returning:", {
+      projectsCount: formattedProjects.length,
+      total: filteredTotal,
+    });
 
     return NextResponse.json({
       projects: formattedProjects,

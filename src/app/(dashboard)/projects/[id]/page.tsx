@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { StatusBadge, Button } from "@/components/ui";
+import { StatusBadge, Button, LoadingSpinner } from "@/components/ui";
 import {
   ProjectInfoCard,
   ProjectUserCard,
@@ -75,11 +75,7 @@ export default function ProjectDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-zinc-400">Carregando projeto...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando projeto..." minHeight="400px" />;
   }
 
   if (error) {

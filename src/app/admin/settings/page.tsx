@@ -9,6 +9,7 @@ import {
   Button,
   Input,
   ConfirmDialog,
+  LoadingSpinner,
 } from "@/components/ui";
 import { Plus, Trash2, Save, HardDrive, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
@@ -297,16 +298,7 @@ export default function AdminSettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-4 text-sm text-zinc-400">
-            Carregando configurações...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando configurações..." minHeight="400px" />;
   }
 
   return (

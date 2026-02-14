@@ -27,6 +27,7 @@ import {
   CardTitle,
   StatusBadge,
   useToast,
+  LoadingSpinner,
 } from "@/components/ui";
 import { userStatusConfig } from "@/components/project";
 
@@ -220,14 +221,7 @@ export default function UserDetailPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-green-500 border-t-transparent mx-auto" />
-          <p className="text-zinc-400">Carregando usuário...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando usuário..." minHeight="400px" />;
   }
 
   // Error state

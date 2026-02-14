@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button, DataTable, StatusBadge } from "@/components/ui";
+import { Button, DataTable, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { InviteUserModal } from "@/components/admin/InviteUserModal";
 import { userStatusConfig } from "@/components/project";
 
@@ -163,11 +163,7 @@ export default function AdminUsersPage() {
   };
 
   if (isFetching) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-zinc-400">Carregando usuários...</div>
-      </div>
-    );
+    return <LoadingSpinner text="Carregando usuários..." minHeight="400px" />;
   }
 
   return (
