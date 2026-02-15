@@ -57,12 +57,12 @@ export async function GET(
     // Group files by category
     const filesGrouped = {
       ortomosaico: project.files.filter(
-        (f) => f.fileCategory === "ORTOMOSAICO",
+        (f) => f.fileCategory === "INPUT_ORTOMOSAICO",
       ),
       perimetros: project.files.filter(
-        (f) => f.fileCategory === "PERIMETRO_ANALISE",
+        (f) => f.fileCategory === "INPUT_PERIMETRO",
       ),
-      outros: project.files.filter((f) => f.fileCategory === "OTHER"),
+      outros: project.files.filter((f) => f.fileCategory === "INPUT_OTHER"),
     };
 
     return NextResponse.json({

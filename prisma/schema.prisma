@@ -182,14 +182,16 @@ model File {
   fileType String
   fileKey  String
 
-  fileCategory FileCategory @default(OTHER) // ← ADICIONAR ESTA LINHA
+  fileCategory FileCategory @default(INPUT_OTHER)
+  isInput      Boolean      @default(true)
 
   uploadedAt DateTime @default(now())
   uploadedBy String
   uploader   User     @relation(fields: [uploadedBy], references: [id])
 
   @@index([projectId])
-  @@index([fileCategory]) // ← ADICIONAR ESTE ÍNDICE
+  @@index([fileCategory])
+  @@index([isInput])
   @@map("files")
 }
 
@@ -257,7 +259,17 @@ enum ProjectStatus {
 }
 
 enum FileCategory {
-  ORTOMOSAICO
-  PERIMETRO_ANALISE
-  OTHER
+  // Input files
+  INPUT_ORTOMOSAICO
+  INPUT_PERIMETRO
+  INPUT_OTHER
+
+  // Output/Deliverable files
+  OUTPUT_DJI_SHAPEFILE
+  OUTPUT_ORTOMOSAIC
+  OUTPUT_RELATORIO
+  OUTPUT_SHAPEFILE_DANINHAS
+  OUTPUT_SHAPEFILE_OBSTACULOS
+  OUTPUT_SHAPEFILE_PERIMETROS
+  OUTPUT_OTHER
 }

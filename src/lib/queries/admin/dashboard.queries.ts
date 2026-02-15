@@ -53,15 +53,44 @@ interface AdminProject {
   completedAt: string | null;
 }
 
+// Simple in-memory cache
+let statsCache: {
+  data: AdminStats | null;
+  timestamp: number;
+} = {
+  data: null,
+  timestamp: 0,
+};
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 /**
- * Get admin dashboard statistics
+ * Get admin dashboard statistics with caching
  */
 export async function getAdminStats(): Promise<AdminStats> {
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  const now = Date.now();
+
+  // Return cached data if still valid
+  if (statsCache.data && now - statsCache.timestamp < CACHE_TTL) {
+    return statsCache.data;
+  }
+
+  // Otherwise fetch fresh data
+  const currentDate = new Date();
+  const firstDayOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1,
+  );
+  const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(
+    currentDate.getTime() - 30 * 24 * 60 * 60 * 1000,
+  );
+  const sixMonthsAgo = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() - 6,
+    1,
+  );
 
   const [
     totalRevenue,
@@ -132,14 +161,33 @@ export async function getAdminStats(): Promise<AdminStats> {
     `,
   ]);
 
-  // Format monthly revenue
-  const monthlyRevenue: MonthlyRevenue[] = monthlyRevenueData.map((item) => ({
-    mes: new Date(item.month).toLocaleDateString("pt-BR", {
-      month: "short",
-      year: "numeric",
-    }),
-    receita: Number(item.revenue),
-  }));
+  // Generate all 6 months with zero revenue for missing months
+  const monthlyRevenue: MonthlyRevenue[] = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() - i,
+      1,
+    );
+
+    // Find revenue for this month in the query results
+    const revenueData = monthlyRevenueData.find((item) => {
+      const itemDate = new Date(item.month);
+      return (
+        itemDate.getFullYear() === date.getFullYear() &&
+        itemDate.getMonth() === date.getMonth()
+      );
+    });
+
+    monthlyRevenue.push({
+      mes: date.toLocaleDateString("pt-BR", {
+        month: "short",
+        year: "numeric",
+      }),
+      receita: revenueData ? Number(revenueData.revenue) : 0,
+    });
+  }
 
   // Calculate total for percentage
   const totalCultureRevenue = revenueByCultureData.reduce(
@@ -162,7 +210,7 @@ export async function getAdminStats(): Promise<AdminStats> {
     },
   );
 
-  return {
+  const stats = {
     totalRevenue: Number(totalRevenue._sum.price || 0),
     activeUsers,
     newUsersThisWeek,
@@ -170,6 +218,25 @@ export async function getAdminStats(): Promise<AdminStats> {
     projectsThisMonth,
     monthlyRevenue,
     revenueByCulture,
+  };
+
+  // Update cache
+  statsCache = {
+    data: stats,
+    timestamp: now,
+  };
+
+  return stats;
+}
+
+/**
+ * Manually invalidate the stats cache
+ * Call this when a project is completed/paid to refresh stats immediately
+ */
+export function invalidateStatsCache() {
+  statsCache = {
+    data: null,
+    timestamp: 0,
   };
 }
 
@@ -216,7 +283,10 @@ export async function getAdminProjects(
   const skip = (page - 1) * limit;
 
   // Build where clause based on status
-  let whereClause: any = {};
+  const whereClause: {
+    isArchived?: boolean;
+    status?: ProjectStatus;
+  } = {};
 
   if (status === "archived") {
     whereClause.isArchived = true;

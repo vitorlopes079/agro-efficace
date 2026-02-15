@@ -31,7 +31,7 @@ export default function AdminStats({
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex h-[140px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900"
+            className="flex h-35 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900"
           >
             <div className="text-sm text-zinc-400">Carregando...</div>
           </div>

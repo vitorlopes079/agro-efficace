@@ -72,6 +72,16 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     completedFiles: completedPerimetroFiles,
   } = useFileUpload();
 
+  // Hook separado para Outros Arquivos
+  const {
+    files: outrosFiles,
+    addFiles: addOutrosFiles,
+    removeFile: removeOutrosFile,
+    isUploading: isUploadingOutros,
+    hasErrors: hasErrorsOutros,
+    completedFiles: completedOutrosFiles,
+  } = useFileUpload();
+
   const [formData, setFormData] = useState({
     projectName: "",
     projectType: "",
@@ -104,6 +114,14 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     }
   };
 
+  const handleOutrosChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await addOutrosFiles(e.target.files);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -121,7 +139,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     }
 
     // Verificar se ainda tem uploads pendentes
-    if (isUploadingOrtomosaico || isUploadingPerimetro) {
+    if (isUploadingOrtomosaico || isUploadingPerimetro || isUploadingOutros) {
       setError("Aguarde os arquivos terminarem de fazer upload");
       return;
     }
@@ -146,13 +164,19 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             ...completedOrtomosaicoFiles.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
-              category: "ORTOMOSAICO",
+              category: "INPUT_ORTOMOSAICO",
             })),
             // Perímetros
             ...completedPerimetroFiles.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
-              category: "PERIMETRO_ANALISE",
+              category: "INPUT_PERIMETRO",
+            })),
+            // Outros Arquivos
+            ...completedOutrosFiles.map((f) => ({
+              fileKey: f.fileKey,
+              pendingUploadId: f.pendingUploadId,
+              category: "INPUT_OTHER",
             })),
           ],
         }),
@@ -161,8 +185,15 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Erro ao criar projeto");
+        // CRITICAL: Reset submitting state BEFORE showing error
         setIsSubmitting(false);
+        setError(data.error || "Erro ao criar projeto");
+
+        // Also show a toast for better visibility
+        toast.error(
+          "Erro ao criar projeto",
+          data.error || "Ocorreu um erro ao processar sua solicitação.",
+        );
         return;
       }
 
@@ -173,13 +204,21 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
       router.push(backUrl);
     } catch (error) {
       console.error("Error creating project:", error);
-      setError("Erro ao conectar com o servidor");
+
+      // CRITICAL: Reset submitting state BEFORE showing error
       setIsSubmitting(false);
+      setError("Erro ao conectar com o servidor");
+
+      // Also show a toast for better visibility
+      toast.error(
+        "Erro de conexão",
+        "Não foi possível conectar com o servidor. Tente novamente.",
+      );
     }
   };
 
-  const isUploading = isUploadingOrtomosaico || isUploadingPerimetro;
-  const hasErrors = hasErrorsOrtomosaico || hasErrorsPerimetro;
+  const isUploading = isUploadingOrtomosaico || isUploadingPerimetro || isUploadingOutros;
+  const hasErrors = hasErrorsOrtomosaico || hasErrorsPerimetro || hasErrorsOutros;
 
   // If user can't upload (and is not admin), show blocked message
   if (!canUpload && !isAdmin) {
@@ -380,6 +419,52 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
                       key={file.id}
                       file={file}
                       onRemove={removePerimetroFile}
+                      disabled={isSubmitting}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* SEÇÃO 3: Outros Arquivos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Outros Arquivos
+                <span className="ml-2 text-sm font-normal text-zinc-400">
+                  (Opcional)
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-6 py-10 transition-colors hover:border-zinc-500/50 hover:bg-zinc-800">
+                <Upload className="mb-3 h-10 w-10 text-zinc-500" />
+                <p className="text-sm font-medium text-zinc-300">
+                  Upload de Outros Arquivos
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Arquivos adicionais do projeto
+                </p>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleOutrosChange}
+                  className="hidden"
+                  disabled={isSubmitting}
+                />
+              </label>
+
+              {outrosFiles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-zinc-300">
+                    Arquivos: {outrosFiles.length}
+                  </p>
+                  {outrosFiles.map((file) => (
+                    <FileUploadItem
+                      key={file.id}
+                      file={file}
+                      onRemove={removeOutrosFile}
                       disabled={isSubmitting}
                     />
                   ))}

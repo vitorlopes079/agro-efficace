@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, X, Archive, Play, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, X, Archive, Play, CheckCircle, XCircle, Trash2, ArrowDown, File } from "lucide-react";
 import {
   StatusBadge,
   Button,
@@ -27,19 +27,6 @@ import {
   formatCurrency,
 } from "@/components/project";
 import type { ProjectData } from "@/components/project";
-
-const FileIcon = () => (
-  <svg
-    className="h-5 w-5 text-zinc-400"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14,2 14,8 20,8" />
-  </svg>
-);
 
 interface ArchiveConfirmModalProps {
   isOpen: boolean;
@@ -286,8 +273,8 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleFinalizeProject = () => {
-    // TODO: Implement finalize project functionality
-    toast.info("Em breve", "Esta funcionalidade está em desenvolvimento.");
+    if (!project) return;
+    router.push(`/admin/projects/${project.id}/finalize`);
   };
 
   const handleRegisterPayment = async () => {
@@ -438,6 +425,28 @@ export default function AdminProjectDetailPage() {
   const statusInfo = statusConfig[project.status] || {
     label: project.status,
     variant: "gray" as const,
+  };
+
+  // Filter and group files
+  const inputFiles = project.files.filter((f) => f.fileCategory.startsWith("INPUT_"));
+  const outputFiles = project.files.filter((f) => f.fileCategory.startsWith("OUTPUT_"));
+
+  // Output file categories
+  const outputDJI = outputFiles.filter((f) => f.fileCategory === "OUTPUT_DJI_SHAPEFILE");
+  const outputOrtomosaic = outputFiles.filter((f) => f.fileCategory === "OUTPUT_ORTOMOSAIC");
+  const outputRelatorio = outputFiles.filter((f) => f.fileCategory === "OUTPUT_RELATORIO");
+  const outputDaninhas = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_DANINHAS");
+  const outputObstaculos = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_OBSTACULOS");
+  const outputPerimetros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_PERIMETROS");
+  const outputOutros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_OTHER");
+
+  // ZIP download handlers
+  const handleDownloadInputZip = () => {
+    window.open(`/api/projects/${project.id}/download/input-zip`, "_blank");
+  };
+
+  const handleDownloadOutputZip = () => {
+    window.open(`/api/projects/${project.id}/download/output-zip`, "_blank");
   };
 
   return (
@@ -595,9 +604,31 @@ export default function AdminProjectDetailPage() {
         <ProjectUserCard user={project.user} />
       </div>
 
-      {/* Files Section */}
+      {/* Input Files Section */}
       <div className="space-y-6">
-        <h2 className="text-lg font-semibold text-white">Arquivos</h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-white">Arquivos de Entrada</h2>
+          <div className="flex gap-2">
+            {inputFiles.length > 0 && (
+              <button
+                onClick={handleDownloadInputZip}
+                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" />
+                Baixar Arquivos do Cliente
+              </button>
+            )}
+            {project.status === "COMPLETED" && outputFiles.length > 0 && (
+              <button
+                onClick={handleDownloadOutputZip}
+                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" />
+                Baixar Solução Completa
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <FileList
@@ -621,12 +652,91 @@ export default function AdminProjectDetailPage() {
           <FileList
             files={project.filesGrouped.outros}
             projectId={project.id}
-            icon={<FileIcon />}
+            icon={<File className="h-5 w-5 text-zinc-400" />}
             title="Outros Arquivos"
             emptyMessage="Nenhum arquivo adicional"
           />
         )}
       </div>
+
+      {/* Output Files Section */}
+      {project.status === "COMPLETED" && outputFiles.length > 0 && (
+        <div className="mt-8 space-y-6">
+          <h2 className="text-lg font-semibold text-white">Arquivos de Saída</h2>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {outputDJI.length > 0 && (
+              <FileList
+                files={outputDJI}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="DJI Shapefile"
+                emptyMessage="Nenhum arquivo DJI"
+              />
+            )}
+
+            {outputOrtomosaic.length > 0 && (
+              <FileList
+                files={outputOrtomosaic}
+                projectId={project.id}
+                icon={<MapIcon />}
+                title="Ortomosaico Processado"
+                emptyMessage="Nenhum ortomosaico processado"
+              />
+            )}
+
+            {outputRelatorio.length > 0 && (
+              <FileList
+                files={outputRelatorio}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="Relatórios"
+                emptyMessage="Nenhum relatório"
+              />
+            )}
+
+            {outputDaninhas.length > 0 && (
+              <FileList
+                files={outputDaninhas}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Daninhas"
+                emptyMessage="Nenhum shapefile de daninhas"
+              />
+            )}
+
+            {outputObstaculos.length > 0 && (
+              <FileList
+                files={outputObstaculos}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Obstáculos"
+                emptyMessage="Nenhum shapefile de obstáculos"
+              />
+            )}
+
+            {outputPerimetros.length > 0 && (
+              <FileList
+                files={outputPerimetros}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Perímetros"
+                emptyMessage="Nenhum shapefile de perímetros"
+              />
+            )}
+
+            {outputOutros.length > 0 && (
+              <FileList
+                files={outputOutros}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="Outros Arquivos"
+                emptyMessage="Nenhum arquivo adicional"
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Archive Modal */}
       <ArchiveConfirmModal

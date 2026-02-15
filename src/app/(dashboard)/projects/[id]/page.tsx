@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowDown, ArrowLeft, File, CheckCircle } from "lucide-react";
 import { StatusBadge, Button, LoadingSpinner } from "@/components/ui";
 import {
   ProjectInfoCard,
@@ -14,31 +15,6 @@ import {
   formatDate,
 } from "@/components/project";
 import type { ProjectData } from "@/components/project";
-
-const ArrowLeftIcon = () => (
-  <svg
-    className="h-4 w-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M19 12H5M12 19l-7-7 7-7" />
-  </svg>
-);
-
-const FileIcon = () => (
-  <svg
-    className="h-5 w-5 text-zinc-400"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14,2 14,8 20,8" />
-  </svg>
-);
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -80,7 +56,7 @@ export default function ProjectDetailPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-[1400px] px-6 py-8">
+      <main className="mx-auto max-w-350 px-6 py-8">
         <div className="flex flex-col items-center justify-center gap-4 py-16">
           <p className="text-red-400">{error}</p>
           <Button variant="secondary" onClick={() => router.push("/dashboard")}>
@@ -100,18 +76,57 @@ export default function ProjectDetailPage() {
     variant: "gray" as const,
   };
 
+  // Filter and group files
+  const inputFiles = project.files.filter((f) => f.fileCategory.startsWith("INPUT_"));
+  const outputFiles = project.files.filter((f) => f.fileCategory.startsWith("OUTPUT_"));
+
+  // Output file categories
+  const outputDJI = outputFiles.filter((f) => f.fileCategory === "OUTPUT_DJI_SHAPEFILE");
+  const outputOrtomosaic = outputFiles.filter((f) => f.fileCategory === "OUTPUT_ORTOMOSAIC");
+  const outputRelatorio = outputFiles.filter((f) => f.fileCategory === "OUTPUT_RELATORIO");
+  const outputDaninhas = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_DANINHAS");
+  const outputObstaculos = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_OBSTACULOS");
+  const outputPerimetros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_PERIMETROS");
+  const outputOutros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_OTHER");
+
+  // ZIP download handlers
+  const handleDownloadInputZip = () => {
+    window.open(`/api/projects/${project.id}/download/input-zip`, "_blank");
+  };
+
+  const handleDownloadOutputZip = () => {
+    window.open(`/api/projects/${project.id}/download/output-zip`, "_blank");
+  };
+
   return (
-    <main className="mx-auto max-w-[1400px] px-6 py-8">
+    <main className="mx-auto max-w-350 px-6 py-8">
       {/* Back Button */}
       <div className="mb-6">
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-white"
         >
-          <ArrowLeftIcon />
+          <ArrowLeft className="h-4 w-4" />
           Voltar ao Dashboard
         </Link>
       </div>
+
+      {/* Completion Notice Banner */}
+      {project.status === "COMPLETED" && (
+        <div className="mb-6 rounded-lg border border-green-500/30 bg-green-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-green-400">
+                Projeto Finalizado
+              </p>
+              <p className="mt-1 text-sm text-green-300/80">
+                Seu projeto foi concluído com sucesso! Você pode baixar a solução completa usando o botão &quot;Baixar Solução Completa&quot; na seção de arquivos abaixo.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -132,9 +147,31 @@ export default function ProjectDetailPage() {
         <ProjectUserCard user={project.user} />
       </div>
 
-      {/* Files Section */}
+      {/* Input Files Section */}
       <div className="space-y-6">
-        <h2 className="text-lg font-semibold text-white">Arquivos</h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-white">Arquivos de Entrada</h2>
+          <div className="flex gap-2">
+            {inputFiles.length > 0 && (
+              <button
+                onClick={handleDownloadInputZip}
+                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" />
+                Baixar Arquivos do Cliente
+              </button>
+            )}
+            {project.status === "COMPLETED" && outputFiles.length > 0 && (
+              <button
+                onClick={handleDownloadOutputZip}
+                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              >
+                <ArrowDown className="h-4 w-4" />
+                Baixar Solução Completa
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <FileList
@@ -158,12 +195,91 @@ export default function ProjectDetailPage() {
           <FileList
             files={project.filesGrouped.outros}
             projectId={project.id}
-            icon={<FileIcon />}
+            icon={<File className="h-5 w-5 text-zinc-400" />}
             title="Outros Arquivos"
             emptyMessage="Nenhum arquivo adicional"
           />
         )}
       </div>
+
+      {/* Output Files Section */}
+      {project.status === "COMPLETED" && outputFiles.length > 0 && (
+        <div className="mt-8 space-y-6">
+          <h2 className="text-lg font-semibold text-white">Arquivos de Saída</h2>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {outputDJI.length > 0 && (
+              <FileList
+                files={outputDJI}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="DJI Shapefile"
+                emptyMessage="Nenhum arquivo DJI"
+              />
+            )}
+
+            {outputOrtomosaic.length > 0 && (
+              <FileList
+                files={outputOrtomosaic}
+                projectId={project.id}
+                icon={<MapIcon />}
+                title="Ortomosaico Processado"
+                emptyMessage="Nenhum ortomosaico processado"
+              />
+            )}
+
+            {outputRelatorio.length > 0 && (
+              <FileList
+                files={outputRelatorio}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="Relatórios"
+                emptyMessage="Nenhum relatório"
+              />
+            )}
+
+            {outputDaninhas.length > 0 && (
+              <FileList
+                files={outputDaninhas}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Daninhas"
+                emptyMessage="Nenhum shapefile de daninhas"
+              />
+            )}
+
+            {outputObstaculos.length > 0 && (
+              <FileList
+                files={outputObstaculos}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Obstáculos"
+                emptyMessage="Nenhum shapefile de obstáculos"
+              />
+            )}
+
+            {outputPerimetros.length > 0 && (
+              <FileList
+                files={outputPerimetros}
+                projectId={project.id}
+                icon={<PolygonIcon />}
+                title="Shapefile - Perímetros"
+                emptyMessage="Nenhum shapefile de perímetros"
+              />
+            )}
+
+            {outputOutros.length > 0 && (
+              <FileList
+                files={outputOutros}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="Outros Arquivos"
+                emptyMessage="Nenhum arquivo adicional"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -4,6 +4,7 @@ export interface FileData {
   fileSize: string;
   fileType: string;
   fileKey: string;
+  fileCategory: string; 
   uploadedAt: string;
 }
 

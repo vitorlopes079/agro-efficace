@@ -185,16 +185,7 @@ export default function ProjectsSection({
           columns={columns}
           data={projects}
           keyExtractor={(project) => project.id}
-          actions={
-            <>
-              <button className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white">
-                Filtrar
-              </button>
-              <button className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white">
-                Exportar
-              </button>
-            </>
-          }
+    
           onRowClick={(project) => router.push(`/projects/${project.id}`)}
           rowAction={(project) => (
             <button

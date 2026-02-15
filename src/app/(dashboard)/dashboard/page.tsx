@@ -14,7 +14,6 @@ export default async function Home() {
 
   const isAdmin = session.user.role === "ADMIN";
 
-  // Fetch all dashboard data in one clean call
   const { stats, projects, pagination } = await getDashboardData(
     session.user.id,
     isAdmin,

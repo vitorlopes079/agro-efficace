@@ -35,7 +35,6 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   keyExtractor: (item: T) => string;
-  actions?: ReactNode;
   pagination?: {
     page: number;
     totalPages: number;
@@ -47,23 +46,15 @@ interface DataTableProps<T> {
 }
 
 export function DataTable<T>({
-  title,
   columns,
   data,
   keyExtractor,
-  actions,
   pagination,
   rowAction,
   onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
-      {(title || actions) && (
-        <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-          {title && <h2 className="text-lg font-semibold">{title}</h2>}
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <table className="w-full">

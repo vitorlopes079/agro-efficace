@@ -11,7 +11,7 @@ export { ConfirmDialog, useConfirmDialog } from "./confirm-dialog";
 export { DataTable } from "./data-table";
 export { InfoTooltip } from "./info-tooltip";
 export { Input } from "./input";
-export { LoadingOverlay, CreatingProjectOverlay } from "./loading-overlay";
+export { LoadingOverlay, CreatingProjectOverlay, FinalizingProjectOverlay } from "./loading-overlay";
 export { LoadingSpinner, LoadingText } from "./loading-spinner";
 export { BalanceDetailsModal } from "./balance-details-modal";
 export { SearchInput } from "./search-input";

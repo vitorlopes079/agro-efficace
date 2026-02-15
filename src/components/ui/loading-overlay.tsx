@@ -1,7 +1,7 @@
 // src/components/ui/loading-overlay.tsx
 "use client";
 
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, CheckCircle } from "lucide-react";
 import { ReactNode } from "react";
 
 interface LoadingOverlayProps {
@@ -56,6 +56,17 @@ export function CreatingProjectOverlay() {
       title="Estamos criando seu projeto"
       message="Isso pode levar alguns segundos. Por favor, não feche ou atualize a página."
       icon={<Upload className="h-8 w-8 text-green-400" />}
+    />
+  );
+}
+
+// Pre-configured overlay for project finalization
+export function FinalizingProjectOverlay() {
+  return (
+    <LoadingOverlay
+      title="Finalizando projeto"
+      message="Processando e organizando os arquivos de entrega. Não feche esta página, o processo será concluído em alguns instantes."
+      icon={<CheckCircle className="h-8 w-8 text-green-400" />}
     />
   );
 }

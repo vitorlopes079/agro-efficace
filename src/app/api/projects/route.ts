@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar que tem pelo menos 1 ortomosaico
-    const hasOrtomosaico = files.some((f) => f.category === "ORTOMOSAICO");
+    const hasOrtomosaico = files.some((f) => f.category === "INPUT_ORTOMOSAICO");
     if (!hasOrtomosaico) {
       console.log("❌ [PROJECT API] No ortomosaico file");
       return NextResponse.json(
@@ -191,14 +191,14 @@ export async function POST(req: NextRequest) {
 
         // Determinar pasta baseada na categoria
         const categoryFolder =
-          fileData.category === "ORTOMOSAICO" ? "ortomosaico" : "perimetros";
+          fileData.category === "INPUT_ORTOMOSAICO" ? "ortomosaico" : "perimetros";
 
         // Extrair nome do arquivo do fileKey
         const fileName =
           pendingUpload.fileKey.split("/").pop() || pendingUpload.fileName;
 
         // Novo caminho no R2
-        const newFileKey = `projects/${project.id}/${categoryFolder}/${fileName}`;
+        const newFileKey = `projects/${project.id}/input/${categoryFolder}/${fileName}`;
 
         console.log(
           `🔄 [PROJECT API] Moving file from ${pendingUpload.fileKey} to ${newFileKey}`,
