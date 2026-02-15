@@ -15,6 +15,7 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   console.log("🚀 [PROJECT API] Starting project creation...");
 
   try {
@@ -72,7 +73,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar que tem pelo menos 1 ortomosaico
-    const hasOrtomosaico = files.some((f) => f.category === "INPUT_ORTOMOSAICO");
+    const hasOrtomosaico = files.some(
+      (f) => f.category === "INPUT_ORTOMOSAICO",
+    );
     if (!hasOrtomosaico) {
       console.log("❌ [PROJECT API] No ortomosaico file");
       return NextResponse.json(
@@ -160,19 +163,20 @@ export async function POST(req: NextRequest) {
     });
     console.log("✅ [PROJECT API] Project created:", project.id);
 
-    // Processar arquivos
-    console.log(`📁 [PROJECT API] Processing ${files.length} files...`);
+    // Process files in PARALLEL for better performance
+    console.log(
+      `📁 [PROJECT API] Processing ${files.length} files in parallel...`,
+    );
+    const fileProcessingStart = Date.now();
 
-    let processedCount = 0;
-    let errorCount = 0;
-
-    for (const fileData of files) {
-      try {
+    const results = await Promise.allSettled(
+      files.map(async (fileData) => {
+        const fileStart = Date.now();
         console.log(
           `📄 [PROJECT API] Processing file: ${fileData.pendingUploadId}`,
         );
 
-        // Buscar PendingUpload
+        // Fetch PendingUpload
         const pendingUpload = await prisma.pendingUpload.findUnique({
           where: { id: fileData.pendingUploadId },
         });
@@ -181,30 +185,35 @@ export async function POST(req: NextRequest) {
           console.log(
             `⚠️ [PROJECT API] PendingUpload not found: ${fileData.pendingUploadId}`,
           );
-          errorCount++;
-          continue;
+          throw new Error(
+            `PendingUpload not found: ${fileData.pendingUploadId}`,
+          );
         }
 
         console.log(
           `📦 [PROJECT API] Found pending upload: ${pendingUpload.fileName}`,
         );
 
-        // Determinar pasta baseada na categoria
-        const categoryFolder =
-          fileData.category === "INPUT_ORTOMOSAICO" ? "ortomosaico" : "perimetros";
+        // Determine folder based on category
+        let categoryFolder = "perimetros";
+        if (fileData.category === "INPUT_ORTOMOSAICO") {
+          categoryFolder = "ortomosaico";
+        } else if (fileData.category === "INPUT_OTHER") {
+          categoryFolder = "outros";
+        }
 
-        // Extrair nome do arquivo do fileKey
+        // Extract filename from fileKey
         const fileName =
           pendingUpload.fileKey.split("/").pop() || pendingUpload.fileName;
 
-        // Novo caminho no R2
+        // New path in R2
         const newFileKey = `projects/${project.id}/input/${categoryFolder}/${fileName}`;
 
         console.log(
           `🔄 [PROJECT API] Moving file from ${pendingUpload.fileKey} to ${newFileKey}`,
         );
 
-        // Copiar arquivo no R2
+        // Copy file in R2
         const copyCommand = new CopyObjectCommand({
           Bucket: R2_BUCKET,
           CopySource: `${R2_BUCKET}/${pendingUpload.fileKey}`,
@@ -213,7 +222,7 @@ export async function POST(req: NextRequest) {
         await r2Client.send(copyCommand);
         console.log(`✅ [PROJECT API] File copied to new location`);
 
-        // Deletar arquivo antigo
+        // Delete old file
         const deleteCommand = new DeleteObjectCommand({
           Bucket: R2_BUCKET,
           Key: pendingUpload.fileKey,
@@ -221,36 +230,54 @@ export async function POST(req: NextRequest) {
         await r2Client.send(deleteCommand);
         console.log(`🗑️ [PROJECT API] Old file deleted from pending`);
 
-        // Criar registro na tabela File
-        await prisma.file.create({
-          data: {
-            projectId: project.id,
-            fileName: pendingUpload.fileName,
-            fileSize: pendingUpload.fileSize,
-            fileType: pendingUpload.fileType,
-            fileKey: newFileKey,
-            fileCategory: fileData.category,
-            uploadedBy: session.user.id,
-          },
-        });
-        console.log(`💾 [PROJECT API] File record created in database`);
+        // Create File record and update PendingUpload in parallel
+        await Promise.all([
+          prisma.file.create({
+            data: {
+              projectId: project.id,
+              fileName: pendingUpload.fileName,
+              fileSize: pendingUpload.fileSize,
+              fileType: pendingUpload.fileType,
+              fileKey: newFileKey,
+              fileCategory: fileData.category,
+              uploadedBy: session.user.id,
+            },
+          }),
+          prisma.pendingUpload.update({
+            where: { id: fileData.pendingUploadId },
+            data: { status: "CONFIRMED" },
+          }),
+        ]);
 
-        // Marcar PendingUpload como CONFIRMED
-        await prisma.pendingUpload.update({
-          where: { id: fileData.pendingUploadId },
-          data: { status: "CONFIRMED" },
-        });
-        console.log(`✅ [PROJECT API] PendingUpload marked as CONFIRMED`);
-
-        processedCount++;
-      } catch (fileError) {
-        console.error(
-          `❌ [PROJECT API] Error processing file ${fileData.pendingUploadId}:`,
-          fileError,
+        const fileEnd = Date.now();
+        console.log(
+          `💾 [PROJECT API] File processed in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`,
         );
-        errorCount++;
+
+        return { success: true, fileName: pendingUpload.fileName };
+      }),
+    );
+
+    const fileProcessingEnd = Date.now();
+    console.log(
+      `⚡ [PROJECT API] All files processed in ${fileProcessingEnd - fileProcessingStart}ms`,
+    );
+
+    // Count successes and failures
+    const processedCount = results.filter(
+      (r) => r.status === "fulfilled",
+    ).length;
+    const errorCount = results.filter((r) => r.status === "rejected").length;
+
+    // Log any errors
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(
+          `❌ [PROJECT API] Error processing file ${files[index].pendingUploadId}:`,
+          result.reason,
+        );
       }
-    }
+    });
 
     console.log(
       `📊 [PROJECT API] Files processed: ${processedCount} success, ${errorCount} errors`,
@@ -258,7 +285,7 @@ export async function POST(req: NextRequest) {
 
     if (processedCount === 0) {
       console.log("❌ [PROJECT API] No files were processed successfully");
-      // Deletar projeto se nenhum arquivo foi processado
+      // Delete project if no files were processed
       await prisma.project.delete({ where: { id: project.id } });
       return NextResponse.json(
         { error: "Erro ao processar arquivos" },
@@ -289,7 +316,11 @@ export async function POST(req: NextRequest) {
     });
     console.log("✅ [PROJECT API] Audit log created");
 
-    console.log("🎉 [PROJECT API] Project creation completed successfully");
+    const endTime = Date.now();
+    console.log(
+      `🎉 [PROJECT API] Project creation completed successfully in ${endTime - startTime}ms`,
+    );
+
     return NextResponse.json(
       {
         success: true,
