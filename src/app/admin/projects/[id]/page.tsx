@@ -1,403 +1,84 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, X, Archive, Play, CheckCircle, XCircle, Trash2, ArrowDown, File } from "lucide-react";
+import { ArrowLeft, Archive, Play, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import {
   StatusBadge,
   Button,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Input,
-  useToast,
   ConfirmDialog,
   LoadingSpinner,
 } from "@/components/ui";
 import {
   ProjectInfoCard,
   ProjectUserCard,
-  FileList,
-  MapIcon,
-  PolygonIcon,
   statusConfig,
   formatDate,
-  formatCurrency,
 } from "@/components/project";
-import type { ProjectData } from "@/components/project";
-
-interface ArchiveConfirmModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  isArchiving: boolean;
-  projectName: string;
-}
-
-function ArchiveConfirmModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  isArchiving,
-  projectName,
-}: ArchiveConfirmModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Arquivar Projeto</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
-            disabled={isArchiving}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <p className="text-sm text-zinc-300">
-            Tem certeza que deseja arquivar o projeto{" "}
-            <strong className="text-white">{projectName}</strong>?
-          </p>
-
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
-            <p className="text-sm text-amber-400">
-              <strong>⚠️ Atenção:</strong> Os arquivos serão movidos para
-              armazenamento de acesso infrequente (Infrequent Access).
-            </p>
-            <ul className="mt-2 space-y-1 text-xs text-amber-300/80">
-              <li>• Reduz custos de armazenamento em 33%</li>
-              <li>• Cobrança de R$ 0,01/GB ao acessar os arquivos</li>
-              <li>• Ideal para projetos antigos raramente acessados</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isArchiving}
-            fullWidth
-          >
-            Cancelar
-          </Button>
-          <Button onClick={onConfirm} loading={isArchiving} fullWidth>
-            {isArchiving ? "Arquivando..." : "Arquivar Projeto"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface StartProcessingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  project: ProjectData;
-  onSave: (price: string, area: string) => Promise<void>;
-}
-
-function StartProcessingModal({
-  isOpen,
-  onClose,
-  project,
-  onSave,
-}: StartProcessingModalProps) {
-  const [price, setPrice] = useState(project.price || "0");
-  const [area, setArea] = useState(project.areaProcessed || "0");
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setPrice(project.price || "0");
-    setArea(project.areaProcessed || "0");
-  }, [project]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave(price, area);
-      onClose();
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">
-            Iniciar Processamento
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-400">
-              Área Processada (ha)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder="0,00"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-400">
-              Valor (R$)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="0,00"
-            />
-          </div>
-
-          <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
-            <p className="text-sm text-green-400">
-              Ao confirmar, o status do projeto será alterado para{" "}
-              <strong>Em andamento</strong>.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <Button variant="secondary" onClick={onClose} fullWidth>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} loading={isSaving} fullWidth>
-            {isSaving ? "Salvando..." : "Iniciar Processamento"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { ArchiveConfirmModal, StartProcessingModal } from "@/components/admin/modals";
+import {
+  ProjectPaymentSummaryCard,
+  ProjectInputFilesSection,
+  ProjectOutputFilesSection,
+} from "@/components/admin/project-detail";
+import { useAdminProjectDetail } from "@/hooks/useAdminProjectDetail";
+import { useProjectFileGrouping } from "@/hooks/useProjectFileGrouping";
 
 export default function AdminProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const toast = useToast();
-  const [project, setProject] = useState<ProjectData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
-  const [isRegisteringPayment, setIsRegisteringPayment] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchProject(params.id as string);
-    }
-  }, [params.id]);
+  const {
+    project,
+    isLoading,
+    error,
+    isArchiving,
+    isRegisteringPayment,
+    isCanceling,
+    isDeleting,
+    handleStartProcessing,
+    handleRegisterPayment,
+    handleArchiveProject,
+    handleCancelProject,
+    handleDeleteProject,
+    handleFinalizeProject,
+  } = useAdminProjectDetail(params.id);
 
-  const fetchProject = async (id: string) => {
-    setIsLoading(true);
-    setError(null);
+  const {
+    inputFiles,
+    outputFiles,
+    outputDJI,
+    outputOrtomosaic,
+    outputRelatorio,
+    outputDaninhas,
+    outputObstaculos,
+    outputPerimetros,
+    outputOutros,
+  } = useProjectFileGrouping(project);
 
-    try {
-      const response = await fetch(`/api/admin/projects/${id}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setProject(data.project);
-      } else {
-        setError(data.error || "Erro ao carregar projeto");
-      }
-    } catch (err) {
-      console.error("Error fetching project:", err);
-      setError("Erro ao carregar projeto");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDownloadInputZip = () => {
+    if (!project) return;
+    window.open(`/api/projects/${project.id}/download/input-zip`, "_blank");
   };
 
-  const handleStartProcessing = async (price: string, area: string) => {
+  const handleDownloadOutputZip = () => {
     if (!project) return;
-
-    const response = await fetch(`/api/admin/projects/${project.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        price,
-        areaProcessed: area,
-        status: "PROCESSING",
-      }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setProject((prev) =>
-        prev
-          ? {
-              ...prev,
-              price: data.project.price,
-              areaProcessed: data.project.areaProcessed,
-              status: data.project.status,
-            }
-          : null,
-      );
-      toast.success("Processamento iniciado com sucesso!");
-    } else {
-      const data = await response.json();
-      toast.error(data.error || "Erro ao iniciar processamento");
-    }
+    window.open(`/api/projects/${project.id}/download/output-zip`, "_blank");
   };
 
-  const handleFinalizeProject = () => {
-    if (!project) return;
-    router.push(`/admin/projects/${project.id}/finalize`);
+  const handleArchiveConfirm = async () => {
+    await handleArchiveProject();
+    setIsArchiveModalOpen(false);
   };
 
-  const handleRegisterPayment = async () => {
-    if (!project) return;
-
-    setIsRegisteringPayment(true);
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPaid: true }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProject((prev) =>
-          prev
-            ? {
-                ...prev,
-                isPaid: data.project.isPaid,
-                paidAt: data.project.paidAt,
-              }
-            : null,
-        );
-        toast.success("Pagamento registrado com sucesso!");
-      } else {
-        const data = await response.json();
-        toast.error(data.error || "Erro ao registrar pagamento");
-      }
-    } catch (error) {
-      console.error("Error registering payment:", error);
-      toast.error("Erro ao registrar pagamento");
-    } finally {
-      setIsRegisteringPayment(false);
-    }
-  };
-
-  const handleArchiveProject = async () => {
-    if (!project) return;
-
-    setIsArchiving(true);
-    try {
-      const response = await fetch(
-        `/api/admin/projects/${project.id}/archive`,
-        {
-          method: "POST",
-        },
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Projeto arquivado com sucesso!");
-        setIsArchiveModalOpen(false);
-        // Refresh project data
-        await fetchProject(project.id);
-      } else {
-        toast.error(data.error || "Erro ao arquivar projeto");
-      }
-    } catch (error) {
-      console.error("Error archiving project:", error);
-      toast.error("Erro ao arquivar projeto");
-    } finally {
-      setIsArchiving(false);
-    }
-  };
-
-  const handleCancelProject = async () => {
-    if (!project) return;
-
-    setIsCanceling(true);
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "CANCELLED" }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Projeto cancelado com sucesso!");
-        setShowCancelDialog(false);
-        // Refresh project data
-        await fetchProject(project.id);
-      } else {
-        toast.error(data.error || "Erro ao cancelar projeto");
-      }
-    } catch (error) {
-      console.error("Error canceling project:", error);
-      toast.error("Erro ao cancelar projeto");
-    } finally {
-      setIsCanceling(false);
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    if (!project) return;
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/admin/projects/${project.id}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(
-          "Projeto deletado com sucesso!",
-          `${data.filesDeleted} arquivos removidos do armazenamento`,
-        );
-        // Redirect to projects list after deletion
-        router.push("/admin/projects");
-      } else {
-        toast.error(data.error || "Erro ao deletar projeto");
-      }
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      toast.error("Erro ao deletar projeto");
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleCancelConfirm = async () => {
+    await handleCancelProject();
+    setShowCancelDialog(false);
   };
 
   if (isLoading) {
@@ -425,28 +106,6 @@ export default function AdminProjectDetailPage() {
   const statusInfo = statusConfig[project.status] || {
     label: project.status,
     variant: "gray" as const,
-  };
-
-  // Filter and group files
-  const inputFiles = project.files.filter((f) => f.fileCategory.startsWith("INPUT_"));
-  const outputFiles = project.files.filter((f) => f.fileCategory.startsWith("OUTPUT_"));
-
-  // Output file categories
-  const outputDJI = outputFiles.filter((f) => f.fileCategory === "OUTPUT_DJI_SHAPEFILE");
-  const outputOrtomosaic = outputFiles.filter((f) => f.fileCategory === "OUTPUT_ORTOMOSAIC");
-  const outputRelatorio = outputFiles.filter((f) => f.fileCategory === "OUTPUT_RELATORIO");
-  const outputDaninhas = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_DANINHAS");
-  const outputObstaculos = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_OBSTACULOS");
-  const outputPerimetros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_PERIMETROS");
-  const outputOutros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_OTHER");
-
-  // ZIP download handlers
-  const handleDownloadInputZip = () => {
-    window.open(`/api/projects/${project.id}/download/input-zip`, "_blank");
-  };
-
-  const handleDownloadOutputZip = () => {
-    window.open(`/api/projects/${project.id}/download/output-zip`, "_blank");
   };
 
   return (
@@ -544,56 +203,11 @@ export default function AdminProjectDetailPage() {
 
       {/* Payment Summary Card */}
       <div className="mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Resumo do Pagamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-6">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  Valor
-                </p>
-                <p className="mt-1 text-xl font-semibold text-white">
-                  {formatCurrency(project.price)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  Status
-                </p>
-                <div className="mt-1">
-                  {project.isPaid ? (
-                    <StatusBadge label="Pago" variant="green" />
-                  ) : (
-                    <StatusBadge label="Pendente" variant="amber" />
-                  )}
-                </div>
-              </div>
-              {project.isPaid && project.paidAt && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    Pago em
-                  </p>
-                  <p className="mt-1 text-sm text-white">
-                    {formatDate(project.paidAt)}
-                  </p>
-                </div>
-              )}
-              {!project.isPaid && (
-                <div className="ml-auto">
-                  <Button
-                    size="sm"
-                    onClick={handleRegisterPayment}
-                    loading={isRegisteringPayment}
-                  >
-                    Registrar Pagamento
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ProjectPaymentSummaryCard
+          project={project}
+          onRegisterPayment={handleRegisterPayment}
+          isRegisteringPayment={isRegisteringPayment}
+        />
       </div>
 
       {/* Project Details Grid */}
@@ -605,144 +219,33 @@ export default function AdminProjectDetailPage() {
       </div>
 
       {/* Input Files Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-white">Arquivos de Entrada</h2>
-          <div className="flex gap-2">
-            {inputFiles.length > 0 && (
-              <button
-                onClick={handleDownloadInputZip}
-                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-              >
-                <ArrowDown className="h-4 w-4" />
-                Baixar Arquivos do Cliente
-              </button>
-            )}
-            {project.status === "COMPLETED" && outputFiles.length > 0 && (
-              <button
-                onClick={handleDownloadOutputZip}
-                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-              >
-                <ArrowDown className="h-4 w-4" />
-                Baixar Solução Completa
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <FileList
-            files={project.filesGrouped.ortomosaico}
-            projectId={project.id}
-            icon={<MapIcon />}
-            title="Ortomosaicos"
-            emptyMessage="Nenhum ortomosaico enviado"
-          />
-
-          <FileList
-            files={project.filesGrouped.perimetros}
-            projectId={project.id}
-            icon={<PolygonIcon />}
-            title="Perímetros de Análise"
-            emptyMessage="Nenhum perímetro enviado"
-          />
-        </div>
-
-        {project.filesGrouped.outros.length > 0 && (
-          <FileList
-            files={project.filesGrouped.outros}
-            projectId={project.id}
-            icon={<File className="h-5 w-5 text-zinc-400" />}
-            title="Outros Arquivos"
-            emptyMessage="Nenhum arquivo adicional"
-          />
-        )}
-      </div>
+      <ProjectInputFilesSection
+        project={project}
+        hasInputFiles={inputFiles.length > 0}
+        hasOutputFiles={outputFiles.length > 0}
+        onDownloadInputZip={handleDownloadInputZip}
+        onDownloadOutputZip={handleDownloadOutputZip}
+      />
 
       {/* Output Files Section */}
       {project.status === "COMPLETED" && outputFiles.length > 0 && (
-        <div className="mt-8 space-y-6">
-          <h2 className="text-lg font-semibold text-white">Arquivos de Saída</h2>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            {outputDJI.length > 0 && (
-              <FileList
-                files={outputDJI}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="DJI Shapefile"
-                emptyMessage="Nenhum arquivo DJI"
-              />
-            )}
-
-            {outputOrtomosaic.length > 0 && (
-              <FileList
-                files={outputOrtomosaic}
-                projectId={project.id}
-                icon={<MapIcon />}
-                title="Ortomosaico Processado"
-                emptyMessage="Nenhum ortomosaico processado"
-              />
-            )}
-
-            {outputRelatorio.length > 0 && (
-              <FileList
-                files={outputRelatorio}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="Relatórios"
-                emptyMessage="Nenhum relatório"
-              />
-            )}
-
-            {outputDaninhas.length > 0 && (
-              <FileList
-                files={outputDaninhas}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Daninhas"
-                emptyMessage="Nenhum shapefile de daninhas"
-              />
-            )}
-
-            {outputObstaculos.length > 0 && (
-              <FileList
-                files={outputObstaculos}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Obstáculos"
-                emptyMessage="Nenhum shapefile de obstáculos"
-              />
-            )}
-
-            {outputPerimetros.length > 0 && (
-              <FileList
-                files={outputPerimetros}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Perímetros"
-                emptyMessage="Nenhum shapefile de perímetros"
-              />
-            )}
-
-            {outputOutros.length > 0 && (
-              <FileList
-                files={outputOutros}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="Outros Arquivos"
-                emptyMessage="Nenhum arquivo adicional"
-              />
-            )}
-          </div>
-        </div>
+        <ProjectOutputFilesSection
+          projectId={project.id}
+          outputDJI={outputDJI}
+          outputOrtomosaic={outputOrtomosaic}
+          outputRelatorio={outputRelatorio}
+          outputDaninhas={outputDaninhas}
+          outputObstaculos={outputObstaculos}
+          outputPerimetros={outputPerimetros}
+          outputOutros={outputOutros}
+        />
       )}
 
       {/* Archive Modal */}
       <ArchiveConfirmModal
         isOpen={isArchiveModalOpen}
         onClose={() => setIsArchiveModalOpen(false)}
-        onConfirm={handleArchiveProject}
+        onConfirm={handleArchiveConfirm}
         isArchiving={isArchiving}
         projectName={project.name}
       />
@@ -759,7 +262,7 @@ export default function AdminProjectDetailPage() {
       <ConfirmDialog
         isOpen={showCancelDialog}
         onClose={() => setShowCancelDialog(false)}
-        onConfirm={handleCancelProject}
+        onConfirm={handleCancelConfirm}
         title="Cancelar Projeto"
         description={
           <>
