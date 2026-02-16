@@ -1,7 +1,5 @@
 "use client";
 
-import { projectStatusConfig } from "@/components/project";
-
 type ProjectStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
 type TabValue = "all" | ProjectStatus | "archived";
 

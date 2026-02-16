@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button, DataTable, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { InviteUserModal } from "@/components/admin/InviteUserModal";
-import { userStatusConfig } from "@/components/project";
+import { userStatusConfig } from "@/lib/constants/status-configs";
 
 interface User {
   id: string;

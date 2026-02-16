@@ -7,7 +7,7 @@ import {
   getAdminProjects,
   getAdminProjectCounts,
 } from "@/lib/queries/admin/dashboard.queries";
-import AdminProjectsTable from "@/components/ui/Adminprojectstable";
+import { AdminProjectsTable } from "@/components/admin/dashboard";
 
 export default async function AdminProjectsPage() {
   const session = await getServerSession(authOptions);

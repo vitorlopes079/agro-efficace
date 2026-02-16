@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui";
-import type { ProjectData } from "@/components/project";
+import type { ProjectData } from "@/lib/types/project";
 
 export function useAdminProjectDetail(projectId: string | string[] | undefined) {
   const router = useRouter();

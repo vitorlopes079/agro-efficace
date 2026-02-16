@@ -3,8 +3,8 @@
 import { ReactNode } from "react";
 import { File, ArrowDown, Map, Hexagon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
-import { formatFileSize, formatDate } from "./constants";
-import type { FileData } from "./types";
+import { formatFileSize, formatDate } from "@/lib/utils/formatters";
+import type { FileData } from "@/lib/types/project";
 
 export const MapIcon = () => <Map className="h-5 w-5 text-emerald-400" />;
 export const PolygonIcon = () => <Hexagon className="h-5 w-5 text-blue-400" />;

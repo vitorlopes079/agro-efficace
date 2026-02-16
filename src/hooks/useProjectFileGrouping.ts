@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ProjectData } from "@/components/project";
+import type { ProjectData } from "@/lib/types/project";
 
 export function useProjectFileGrouping(project: ProjectData | null) {
   return useMemo(() => {

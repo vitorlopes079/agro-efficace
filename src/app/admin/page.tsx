@@ -2,8 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAdminStats } from "@/lib/queries/admin/dashboard.queries";
-import AdminStats from "@/components/ui/AdminStats";
-import AdminCharts from "@/components/ui/Admincharts";
+import { AdminStats, AdminCharts } from "@/components/admin/dashboard";
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);

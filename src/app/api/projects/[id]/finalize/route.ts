@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { r2Client, R2_BUCKET } from "@/lib/r2";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -123,16 +121,6 @@ export async function POST(
     );
     const fileProcessingStart = Date.now();
 
-    const folderMapping: Record<string, string> = {
-      OUTPUT_DJI_SHAPEFILE: "output/dji",
-      OUTPUT_ORTOMOSAIC: "output/ortomosaico",
-      OUTPUT_RELATORIO: "output/relatorios",
-      OUTPUT_SHAPEFILE_DANINHAS: "output/shapefiles/daninhas_folha_larga",
-      OUTPUT_SHAPEFILE_OBSTACULOS: "output/shapefiles/obstaculos",
-      OUTPUT_SHAPEFILE_PERIMETROS: "output/shapefiles/perimetros",
-      OUTPUT_OTHER: "output/outros",
-    };
-
     const processedCategories = new Set<string>();
 
     const results = await Promise.allSettled(
@@ -160,38 +148,8 @@ export async function POST(
           `📦 [FINALIZE API] Found pending upload: ${pendingUpload.fileName}`,
         );
 
-        // Get target folder based on category
-        const targetFolder = folderMapping[fileData.category];
-
-        // Extract file name
-        const fileName =
-          pendingUpload.fileKey.split("/").pop() || pendingUpload.fileName;
-
-        // Build new file key
-        const newFileKey = `projects/${projectId}/${targetFolder}/${fileName}`;
-
-        console.log(
-          `🔄 [FINALIZE API] Moving file from ${pendingUpload.fileKey} to ${newFileKey}`,
-        );
-
-        // Copy file in R2
-        const copyCommand = new CopyObjectCommand({
-          Bucket: R2_BUCKET,
-          CopySource: `${R2_BUCKET}/${pendingUpload.fileKey}`,
-          Key: newFileKey,
-        });
-        await r2Client.send(copyCommand);
-        console.log(`✅ [FINALIZE API] File copied to new location`);
-
-        // Delete old pending file
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: pendingUpload.fileKey,
-        });
-        await r2Client.send(deleteCommand);
-        console.log(`🗑️ [FINALIZE API] Old file deleted from pending`);
-
         // Create File record and update PendingUpload in parallel
+        // File stays in its original location - no R2 copy/delete needed
         await Promise.all([
           prisma.file.create({
             data: {
@@ -199,7 +157,7 @@ export async function POST(
               fileName: pendingUpload.fileName,
               fileSize: pendingUpload.fileSize,
               fileType: pendingUpload.fileType,
-              fileKey: newFileKey,
+              fileKey: pendingUpload.fileKey, // Keep original path
               fileCategory: fileData.category,
               uploadedBy: session.user.id,
               isInput: false, // OUTPUT FILE
@@ -213,7 +171,7 @@ export async function POST(
 
         const fileEnd = Date.now();
         console.log(
-          `💾 [FINALIZE API] File processed in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`,
+          `💾 [FINALIZE API] File linked in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`,
         );
 
         processedCategories.add(fileData.category);

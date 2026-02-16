@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button, Input } from "@/components/ui";
-import type { ProjectData } from "@/components/project";
+import type { ProjectData } from "@/lib/types/project";
 
 interface StartProcessingModalProps {
   isOpen: boolean;

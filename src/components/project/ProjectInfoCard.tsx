@@ -1,8 +1,10 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent, StatusBadge } from "@/components/ui";
-import { projectTypeLabels, cultureLabels, statusConfig, formatDate, formatCurrency } from "./constants";
-import type { ProjectData } from "./types";
+import { statusConfig } from "@/lib/constants/status-configs";
+import { projectTypeLabels, cultureLabels } from "@/lib/constants/project-constants";
+import { formatDate, formatCurrency } from "@/lib/utils/formatters";
+import type { ProjectData } from "@/lib/types/project";
 
 interface ProjectInfoCardProps {
   project: ProjectData;

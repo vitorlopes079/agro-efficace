@@ -1,8 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import DashboardStats from "@/components/ui/DashboardStats";
-import ProjectsSection from "@/components/ui/Projectssection";
+import { DashboardStats, ProjectsSection } from "@/components/dashboard";
 import { getDashboardData } from "@/lib/queries/user/dashboard.queries";
 
 export default async function Home() {

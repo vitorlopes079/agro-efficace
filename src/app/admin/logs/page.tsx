@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { DataTable, StatusBadge, LoadingSpinner } from "@/components/ui";
-import { auditLogActionConfig } from "@/components/project";
+import { auditLogActionConfig } from "@/lib/constants/status-configs";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

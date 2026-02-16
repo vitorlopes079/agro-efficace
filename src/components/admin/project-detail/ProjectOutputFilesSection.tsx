@@ -1,6 +1,6 @@
 import { File } from "lucide-react";
 import { FileList, MapIcon, PolygonIcon } from "@/components/project";
-import type { ProjectData } from "@/components/project";
+import type { ProjectData } from "@/lib/types/project";
 
 interface FileGroup {
   files: ProjectData["files"];

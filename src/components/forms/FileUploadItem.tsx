@@ -1,4 +1,3 @@
-// src/components/FileUploadItem.tsx
 import { Loader2, FileText, X } from "lucide-react";
 import { FileItem } from "@/hooks/useFileUpload";
 

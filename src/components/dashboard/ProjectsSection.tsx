@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable, SearchInput, StatusBadge, LoadingSpinner } from "@/components/ui";
-import { projectStatusConfig } from "@/components/project";
+import { projectStatusConfig } from "@/lib/constants/status-configs";
 
 interface Project {
   id: string;
@@ -185,7 +185,7 @@ export default function ProjectsSection({
           columns={columns}
           data={projects}
           keyExtractor={(project) => project.id}
-    
+
           onRowClick={(project) => router.push(`/projects/${project.id}`)}
           rowAction={(project) => (
             <button

@@ -11,10 +11,10 @@ import {
   FileList,
   MapIcon,
   PolygonIcon,
-  statusConfig,
-  formatDate,
 } from "@/components/project";
-import type { ProjectData } from "@/components/project";
+import { statusConfig } from "@/lib/constants/status-configs";
+import { formatDate } from "@/lib/utils/formatters";
+import type { ProjectData } from "@/lib/types/project";
 
 export default function ProjectDetailPage() {
   const params = useParams();

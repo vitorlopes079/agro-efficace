@@ -77,7 +77,7 @@ export async function POST() {
       `📊 [CLEANUP] R2 deletion complete: ${r2DeletedKeys.length} files deleted, ${r2DeleteErrors.length} errors`
     );
 
-    // 4. List orphaned R2 files (files in pending/ with no database record)
+    // 4. List orphaned R2 files (files in files/ with no database record)
     console.log("🔍 [CLEANUP] Checking for orphaned R2 files without DB records...");
 
     let orphanedR2Files = 0;
@@ -86,7 +86,7 @@ export async function POST() {
     do {
       const listCommand = new ListObjectsV2Command({
         Bucket: R2_BUCKET,
-        Prefix: "pending/",
+        Prefix: "files/",
         ContinuationToken: continuationToken,
       });
 

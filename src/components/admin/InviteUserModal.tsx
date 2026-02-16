@@ -1,4 +1,3 @@
-// src/components/admin/InviteUserModal.tsx
 "use client";
 
 import { useState } from "react";
@@ -14,7 +13,7 @@ interface InviteUserModalProps {
     phone?: string;
     notes?: string;
     role: "admin" | "user";
-  }) => Promise<string>; // Now returns the invitation link
+  }) => Promise<string>;
 }
 
 export function InviteUserModal({

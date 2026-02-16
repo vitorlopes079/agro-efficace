@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent, Button, StatusBadge } from "@/components/ui";
-import { formatCurrency, formatDate } from "@/components/project";
-import type { ProjectData } from "@/components/project";
+import { formatCurrency, formatDate } from "@/lib/utils/formatters";
+import type { ProjectData } from "@/lib/types/project";
 
 interface ProjectPaymentSummaryCardProps {
   project: ProjectData;

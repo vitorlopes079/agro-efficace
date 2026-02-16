@@ -3,8 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { r2Client, R2_BUCKET } from "@/lib/r2";
+import {
+  validateProjectInput,
+  validateUserPermissions,
+  type ProjectInput,
+} from "@/lib/validation/project-validation";
+import {
+  createProjectWithFiles,
+  determineProjectOwner,
+  createAuditLog,
+} from "@/lib/services/project-creation";
+import { VALID_CULTURES, VALID_PROJECT_TYPES } from "@/lib/constants/project-constants";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -19,6 +28,7 @@ export async function POST(req: NextRequest) {
   console.log("🚀 [PROJECT API] Starting project creation...");
 
   try {
+    // Authentication
     const session = await getServerSession(authOptions);
     console.log(
       "👤 [PROJECT API] Session:",
@@ -30,6 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    // Check user permissions
     console.log("🔍 [PROJECT API] Checking user permissions...");
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -37,284 +48,79 @@ export async function POST(req: NextRequest) {
     });
     console.log("📋 [PROJECT API] User status:", user);
 
-    if (user?.status === "SUSPENDED") {
-      console.log("⛔ [PROJECT API] User is suspended");
-      return NextResponse.json({ error: "Conta suspensa" }, { status: 403 });
-    }
-
-    if (!user?.canUpload) {
-      console.log("⛔ [PROJECT API] User cannot upload");
+    const permissionError = validateUserPermissions(user);
+    if (permissionError) {
+      console.log("⛔ [PROJECT API] Permission denied:", permissionError.error);
       return NextResponse.json(
-        { error: "Você não tem permissão para criar projetos" },
-        { status: 403 },
+        { error: permissionError.error },
+        { status: permissionError.status },
       );
     }
 
+    // Parse and validate input
     const body = await req.json();
     console.log("📦 [PROJECT API] Request body:", body);
 
-    const { projectName, projectType, culture, notes, files, userId } = body;
+    const input: ProjectInput = {
+      projectName: body.projectName,
+      projectType: body.projectType,
+      culture: body.culture,
+      notes: body.notes,
+      files: body.files,
+      userId: body.userId,
+    };
 
-    if (!projectName || !projectType || !culture) {
-      console.log("❌ [PROJECT API] Missing required fields");
+    const validationError = validateProjectInput(input);
+    if (validationError) {
+      console.log("❌ [PROJECT API] Validation error:", validationError.error);
       return NextResponse.json(
-        { error: "Nome, tipo e cultura são obrigatórios" },
-        { status: 400 },
+        { error: validationError.error },
+        { status: validationError.status },
       );
-    }
-
-    // Validar que tem pelo menos 1 arquivo
-    if (!files || !Array.isArray(files) || files.length === 0) {
-      console.log("❌ [PROJECT API] No files provided");
-      return NextResponse.json(
-        { error: "É necessário enviar pelo menos um arquivo" },
-        { status: 400 },
-      );
-    }
-
-    // Validar que tem pelo menos 1 ortomosaico
-    const hasOrtomosaico = files.some(
-      (f) => f.category === "INPUT_ORTOMOSAICO",
-    );
-    if (!hasOrtomosaico) {
-      console.log("❌ [PROJECT API] No ortomosaico file");
-      return NextResponse.json(
-        { error: "É necessário enviar pelo menos um ortomosaico" },
-        { status: 400 },
-      );
-    }
-
-    const validProjectTypes = [
-      "DANINHAS",
-      "FALHAS",
-      "RESTITUICAO",
-      "MAPEAMENTO",
-    ];
-    const validCultures = [
-      "CANA",
-      "MILHO",
-      "SOJA",
-      "EUCALIPTO",
-      "CAFE",
-      "ALGODAO",
-    ];
-
-    const projectTypeUpper = projectType.toUpperCase();
-    const cultureUpper = culture.toUpperCase();
-
-    console.log("🔍 [PROJECT API] Validating projectType:", projectTypeUpper);
-    if (!validProjectTypes.includes(projectTypeUpper)) {
-      console.log("❌ [PROJECT API] Invalid project type");
-      return NextResponse.json(
-        { error: "Tipo de projeto inválido" },
-        { status: 400 },
-      );
-    }
-
-    console.log("🔍 [PROJECT API] Validating culture:", cultureUpper);
-    if (!validCultures.includes(cultureUpper)) {
-      console.log("❌ [PROJECT API] Invalid culture");
-      return NextResponse.json({ error: "Cultura inválida" }, { status: 400 });
     }
 
     // Determine project owner
-    let projectOwnerId = session.user.id;
+    const ownerResult = await determineProjectOwner(
+      session.user.id,
+      session.user.role === "ADMIN",
+      input.userId,
+    );
 
-    // If admin provides a userId, validate and use it
-    if (session.user.role === "ADMIN" && userId) {
-      console.log("🔍 [PROJECT API] Admin creating project for user:", userId);
-      const targetUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { status: true, name: true },
-      });
-
-      if (!targetUser) {
-        console.log("❌ [PROJECT API] Target user not found");
-        return NextResponse.json(
-          { error: "Usuário selecionado não encontrado" },
-          { status: 400 },
-        );
-      }
-
-      if (targetUser.status !== "ACTIVE") {
-        console.log("❌ [PROJECT API] Target user is not active");
-        return NextResponse.json(
-          { error: "Usuário selecionado não está ativo" },
-          { status: 400 },
-        );
-      }
-
-      console.log(
-        `✅ [PROJECT API] Creating project for user: ${targetUser.name}`,
+    if (ownerResult.error) {
+      return NextResponse.json(
+        { error: ownerResult.error.error },
+        { status: ownerResult.error.status },
       );
-      projectOwnerId = userId;
     }
 
-    console.log("💾 [PROJECT API] Creating project in database...");
-    const project = await prisma.project.create({
-      data: {
-        name: projectName,
-        projectType: projectTypeUpper,
-        culture: cultureUpper,
-        notes: notes || null,
-        userId: projectOwnerId,
-        status: "PENDING",
-      },
-    });
-    console.log("✅ [PROJECT API] Project created:", project.id);
-
-    // Process files in PARALLEL for better performance
-    console.log(
-      `📁 [PROJECT API] Processing ${files.length} files in parallel...`,
-    );
-    const fileProcessingStart = Date.now();
-
-    const results = await Promise.allSettled(
-      files.map(async (fileData) => {
-        const fileStart = Date.now();
-        console.log(
-          `📄 [PROJECT API] Processing file: ${fileData.pendingUploadId}`,
-        );
-
-        // Fetch PendingUpload
-        const pendingUpload = await prisma.pendingUpload.findUnique({
-          where: { id: fileData.pendingUploadId },
-        });
-
-        if (!pendingUpload) {
-          console.log(
-            `⚠️ [PROJECT API] PendingUpload not found: ${fileData.pendingUploadId}`,
-          );
-          throw new Error(
-            `PendingUpload not found: ${fileData.pendingUploadId}`,
-          );
-        }
-
-        console.log(
-          `📦 [PROJECT API] Found pending upload: ${pendingUpload.fileName}`,
-        );
-
-        // Determine folder based on category
-        let categoryFolder = "perimetros";
-        if (fileData.category === "INPUT_ORTOMOSAICO") {
-          categoryFolder = "ortomosaico";
-        } else if (fileData.category === "INPUT_OTHER") {
-          categoryFolder = "outros";
-        }
-
-        // Extract filename from fileKey
-        const fileName =
-          pendingUpload.fileKey.split("/").pop() || pendingUpload.fileName;
-
-        // New path in R2
-        const newFileKey = `projects/${project.id}/input/${categoryFolder}/${fileName}`;
-
-        console.log(
-          `🔄 [PROJECT API] Moving file from ${pendingUpload.fileKey} to ${newFileKey}`,
-        );
-
-        // Copy file in R2
-        const copyCommand = new CopyObjectCommand({
-          Bucket: R2_BUCKET,
-          CopySource: `${R2_BUCKET}/${pendingUpload.fileKey}`,
-          Key: newFileKey,
-        });
-        await r2Client.send(copyCommand);
-        console.log(`✅ [PROJECT API] File copied to new location`);
-
-        // Delete old file
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: pendingUpload.fileKey,
-        });
-        await r2Client.send(deleteCommand);
-        console.log(`🗑️ [PROJECT API] Old file deleted from pending`);
-
-        // Create File record and update PendingUpload in parallel
-        await Promise.all([
-          prisma.file.create({
-            data: {
-              projectId: project.id,
-              fileName: pendingUpload.fileName,
-              fileSize: pendingUpload.fileSize,
-              fileType: pendingUpload.fileType,
-              fileKey: newFileKey,
-              fileCategory: fileData.category,
-              uploadedBy: session.user.id,
-            },
-          }),
-          prisma.pendingUpload.update({
-            where: { id: fileData.pendingUploadId },
-            data: { status: "CONFIRMED" },
-          }),
-        ]);
-
-        const fileEnd = Date.now();
-        console.log(
-          `💾 [PROJECT API] File processed in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`,
-        );
-
-        return { success: true, fileName: pendingUpload.fileName };
-      }),
+    // Create project with files
+    const result = await createProjectWithFiles(
+      input,
+      ownerResult.ownerId,
+      session.user.id,
     );
 
-    const fileProcessingEnd = Date.now();
-    console.log(
-      `⚡ [PROJECT API] All files processed in ${fileProcessingEnd - fileProcessingStart}ms`,
-    );
-
-    // Count successes and failures
-    const processedCount = results.filter(
-      (r) => r.status === "fulfilled",
-    ).length;
-    const errorCount = results.filter((r) => r.status === "rejected").length;
-
-    // Log any errors
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        console.error(
-          `❌ [PROJECT API] Error processing file ${files[index].pendingUploadId}:`,
-          result.reason,
-        );
-      }
-    });
-
-    console.log(
-      `📊 [PROJECT API] Files processed: ${processedCount} success, ${errorCount} errors`,
-    );
-
-    if (processedCount === 0) {
-      console.log("❌ [PROJECT API] No files were processed successfully");
-      // Delete project if no files were processed
-      await prisma.project.delete({ where: { id: project.id } });
+    if (!result.success || !result.project) {
       return NextResponse.json(
-        { error: "Erro ao processar arquivos" },
+        { error: result.error || "Erro ao criar projeto" },
         { status: 500 },
       );
     }
 
-    console.log("📝 [PROJECT API] Creating audit log...");
-    await prisma.auditLog.create({
-      data: {
-        action: "PROJECT_CREATED",
-        entityType: "Project",
-        entityId: project.id,
-        userId: session.user.id,
-        metadata: {
-          projectName: project.name,
-          projectType: project.projectType,
-          culture: project.culture,
-          filesCount: processedCount,
-          // Track if admin created for another user
-          ...(projectOwnerId !== session.user.id
-            ? { createdForUserId: projectOwnerId, createdByAdmin: true }
-            : {}),
-        },
-        ipAddress: getClientIp(req),
-        userAgent: req.headers.get("user-agent") || null,
+    // Create audit log
+    await createAuditLog(
+      result.project.id,
+      {
+        name: result.project.name,
+        projectType: result.project.projectType,
+        culture: result.project.culture,
+        filesCount: result.project.filesProcessed,
       },
-    });
-    console.log("✅ [PROJECT API] Audit log created");
+      session.user.id,
+      ownerResult.ownerId,
+      getClientIp(req),
+      req.headers.get("user-agent") || null,
+    );
 
     const endTime = Date.now();
     console.log(
@@ -325,16 +131,7 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message: "Projeto criado com sucesso",
-        project: {
-          id: project.id,
-          name: project.name,
-          projectType: project.projectType,
-          culture: project.culture,
-          status: project.status,
-          filesProcessed: processedCount,
-          filesErrors: errorCount,
-          createdAt: project.createdAt,
-        },
+        project: result.project,
       },
       { status: 201 },
     );
@@ -400,22 +197,13 @@ export async function GET(req: NextRequest) {
       ];
 
       // Check if search matches any Culture enum value
-      const cultures = [
-        "CANA",
-        "MILHO",
-        "SOJA",
-        "EUCALIPTO",
-        "CAFE",
-        "ALGODAO",
-      ];
-      const matchingCulture = cultures.find((c) => c.includes(searchUpper));
+      const matchingCulture = VALID_CULTURES.find((c) => c.includes(searchUpper));
       if (matchingCulture) {
         orConditions.push({ culture: matchingCulture });
       }
 
       // Check if search matches any ProjectType enum value
-      const projectTypes = ["DANINHAS", "FALHAS", "RESTITUICAO", "MAPEAMENTO"];
-      const matchingProjectType = projectTypes.find((pt) =>
+      const matchingProjectType = VALID_PROJECT_TYPES.find((pt) =>
         pt.includes(searchUpper),
       );
       if (matchingProjectType) {

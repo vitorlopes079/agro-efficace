@@ -3,13 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, DataTable, SearchInput, StatusBadge, LoadingSpinner } from "@/components/ui";
-import {
-  projectStatusConfig,
-  projectTypeLabels,
-  cultureLabels,
-} from "@/components/project";
+import { projectStatusConfig } from "@/lib/constants/status-configs";
+import { projectTypeLabels, cultureLabels } from "@/lib/constants/project-constants";
 import { FolderOpen } from "lucide-react";
-import StatusTabs from "./StatusTabel";
+import StatusTabs from "./StatusTabs";
 
 type ProjectStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
 type TabValue = "all" | ProjectStatus | "archived";

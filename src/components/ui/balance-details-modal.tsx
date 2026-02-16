@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { StatusBadge } from "./status-badge";
-import { projectStatusConfig } from "@/components/project";
+import { projectStatusConfig } from "@/lib/constants/status-configs";
 
 interface UnpaidProject {
   id: string;

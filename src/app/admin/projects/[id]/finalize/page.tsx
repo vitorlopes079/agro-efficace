@@ -3,26 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   LoadingSpinner,
   useToast,
   FinalizingProjectOverlay,
 } from "@/components/ui";
-import { useFileUpload } from "@/hooks/useFileUpload";
-import { FileUploadItem } from "@/components/FileUploadItem/FileUploadItem";
-
-interface UploadSection {
-  id: string;
-  title: string;
-  description: string;
-  acceptedTypes: string;
-}
+import { useFinalizeProjectUploads } from "@/hooks/useFinalizeProjectUploads";
+import { finalizeUploadSections } from "@/lib/config/finalize-upload-sections";
+import { FinalizeUploadSection } from "@/components/admin/finalize";
+import type { UploadSectionId } from "@/hooks/useFinalizeProjectUploads";
 
 export default function FinalizeProjectPage() {
   const params = useParams();
@@ -32,82 +25,14 @@ export default function FinalizeProjectPage() {
   const [projectName, setProjectName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Upload hooks for each section
-  const djiShapefile = useFileUpload();
-  const ortomosaic = useFileUpload();
-  const reports = useFileUpload();
-  const shapefileWeeds = useFileUpload();
-  const shapefileObstacles = useFileUpload();
-  const shapefilePerimeters = useFileUpload();
-  const outros = useFileUpload();
-
-  // Upload sections matching the folder structure
-  const uploadSections: UploadSection[] = [
-    {
-      id: "dji-shapefile",
-      title: "DJI / SHAPEFILE",
-      description: "Buffers do drone DJI",
-      acceptedTypes: ".shp, .shx, .dbf, .prj, .cpg, .qmd",
-    },
-    {
-      id: "ortomosaic",
-      title: "ORTOMOSAICO COMPRIMIDO",
-      description: "Ortomosaico comprimido da área mapeada",
-      acceptedTypes: ".ecw, .tif, .tiff",
-    },
-    {
-      id: "reports",
-      title: "RELATÓRIOS",
-      description: "Relatórios de análise e resultados",
-      acceptedTypes: ".pdf, .doc, .docx",
-    },
-    {
-      id: "shapefile-weeds",
-      title: "SHAPEFILE / Daninhas Folha Larga",
-      description: "Mapeamento de plantas daninhas de folha larga",
-      acceptedTypes: ".shp, .shx, .dbf, .prj, .cpg",
-    },
-    {
-      id: "shapefile-obstacles",
-      title: "SHAPEFILE / Obstáculos",
-      description: "Mapeamento de obstáculos na área",
-      acceptedTypes: ".shp, .shx, .dbf, .prj, .cpg, .qmd",
-    },
-    {
-      id: "shapefile-perimeters",
-      title: "SHAPEFILE / Perímetros",
-      description: "Delimitação de talhões e perímetros",
-      acceptedTypes: ".shp, .shx, .dbf, .prj, .cpg",
-    },
-    {
-      id: "outros",
-      title: "OUTROS ARQUIVOS",
-      description: "Arquivos adicionais do projeto",
-      acceptedTypes: "Todos os tipos de arquivo",
-    },
-  ];
-
-  // Map section IDs to their upload hooks
-  const getSectionHook = (sectionId: string) => {
-    switch (sectionId) {
-      case "dji-shapefile":
-        return djiShapefile;
-      case "ortomosaic":
-        return ortomosaic;
-      case "reports":
-        return reports;
-      case "shapefile-weeds":
-        return shapefileWeeds;
-      case "shapefile-obstacles":
-        return shapefileObstacles;
-      case "shapefile-perimeters":
-        return shapefilePerimeters;
-      case "outros":
-        return outros;
-      default:
-        return djiShapefile;
-    }
-  };
+  // Manage all upload sections
+  const {
+    getUploadHook,
+    isAnyUploading,
+    hasAnyErrors,
+    totalCompletedFiles,
+    getAllCompletedFiles,
+  } = useFinalizeProjectUploads();
 
   useEffect(() => {
     if (params.id) {
@@ -137,52 +62,24 @@ export default function FinalizeProjectPage() {
   };
 
   const handleFileChange = async (
-    sectionId: string,
+    sectionId: UploadSectionId,
     files: FileList | null,
   ) => {
     if (!files) return;
-    const hook = getSectionHook(sectionId);
+    const hook = getUploadHook(sectionId);
     await hook.addFiles(files);
   };
 
-  const handleRemoveFile = (sectionId: string, fileId: string) => {
-    const hook = getSectionHook(sectionId);
+  const handleRemoveFile = (sectionId: UploadSectionId, fileId: string) => {
+    const hook = getUploadHook(sectionId);
     hook.removeFile(fileId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Category mapping
-    const categoryMapping: Record<string, string> = {
-      "dji-shapefile": "OUTPUT_DJI_SHAPEFILE",
-      ortomosaic: "OUTPUT_ORTOMOSAIC",
-      reports: "OUTPUT_RELATORIO",
-      "shapefile-weeds": "OUTPUT_SHAPEFILE_DANINHAS",
-      "shapefile-obstacles": "OUTPUT_SHAPEFILE_OBSTACULOS",
-      "shapefile-perimeters": "OUTPUT_SHAPEFILE_PERIMETROS",
-      outros: "OUTPUT_OTHER",
-    };
-
     // Collect all completed files from all sections
-    const allFiles: Array<{
-      pendingUploadId: string;
-      category: string;
-      sectionId: string;
-    }> = [];
-
-    uploadSections.forEach((section) => {
-      const hook = getSectionHook(section.id);
-      hook.completedFiles.forEach((file) => {
-        if (file.pendingUploadId) {
-          allFiles.push({
-            pendingUploadId: file.pendingUploadId,
-            category: categoryMapping[section.id],
-            sectionId: section.id,
-          });
-        }
-      });
-    });
+    const allFiles = getAllCompletedFiles();
 
     // Validate at least one file
     if (allFiles.length === 0) {
@@ -194,16 +91,6 @@ export default function FinalizeProjectPage() {
     }
 
     // Check if any uploads are still in progress
-    const isAnyUploading = [
-      djiShapefile,
-      ortomosaic,
-      reports,
-      shapefileWeeds,
-      shapefileObstacles,
-      shapefilePerimeters,
-      outros,
-    ].some((hook) => hook.isUploading);
-
     if (isAnyUploading) {
       toast.error(
         "Upload em andamento",
@@ -249,38 +136,6 @@ export default function FinalizeProjectPage() {
     return <LoadingSpinner text="Carregando projeto..." minHeight="400px" />;
   }
 
-  // Check if any uploads are in progress
-  const isAnyUploading = [
-    djiShapefile,
-    ortomosaic,
-    reports,
-    shapefileWeeds,
-    shapefileObstacles,
-    shapefilePerimeters,
-    outros,
-  ].some((hook) => hook.isUploading);
-
-  const hasAnyErrors = [
-    djiShapefile,
-    ortomosaic,
-    reports,
-    shapefileWeeds,
-    shapefileObstacles,
-    shapefilePerimeters,
-    outros,
-  ].some((hook) => hook.hasErrors);
-
-  // Calculate total files
-  const totalCompletedFiles = [
-    djiShapefile,
-    ortomosaic,
-    reports,
-    shapefileWeeds,
-    shapefileObstacles,
-    shapefilePerimeters,
-    outros,
-  ].reduce((acc, hook) => acc + hook.completedFiles.length, 0);
-
   return (
     <>
       {/* Loading Overlay */}
@@ -313,63 +168,21 @@ export default function FinalizeProjectPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Upload Sections */}
-          {uploadSections.map((section) => {
-            const hook = getSectionHook(section.id);
+          {finalizeUploadSections.map((section) => {
+            const hook = getUploadHook(section.id as UploadSectionId);
             return (
-              <Card key={section.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{section.title}</CardTitle>
-                  <p className="text-sm text-zinc-400">{section.description}</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Upload Area */}
-                  <label
-                    className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
-                      hook.files.length > 0
-                        ? "border-green-500/50 bg-green-500/5"
-                        : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800"
-                    }`}
-                  >
-                    <Upload
-                      className={`mb-3 h-8 w-8 ${
-                        hook.files.length > 0 ? "text-green-500" : "text-zinc-500"
-                      }`}
-                    />
-                    <p className="text-sm font-medium text-zinc-300">
-                      {hook.files.length > 0
-                        ? `${hook.files.length} arquivo(s) selecionado(s)`
-                        : "Clique ou arraste arquivos aqui"}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Tipos aceitos: {section.acceptedTypes}
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={(e) => handleFileChange(section.id, e.target.files)}
-                      className="hidden"
-                      disabled={isSubmitting}
-                    />
-                  </label>
-
-                  {/* File List */}
-                  {hook.files.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-zinc-300">
-                        Arquivos: {hook.files.length}
-                      </p>
-                      {hook.files.map((file) => (
-                        <FileUploadItem
-                          key={file.id}
-                          file={file}
-                          onRemove={() => handleRemoveFile(section.id, file.id)}
-                          disabled={isSubmitting}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <FinalizeUploadSection
+                key={section.id}
+                section={section}
+                files={hook.files}
+                onFileChange={(files) =>
+                  handleFileChange(section.id as UploadSectionId, files)
+                }
+                onRemoveFile={(fileId) =>
+                  handleRemoveFile(section.id as UploadSectionId, fileId)
+                }
+                disabled={isSubmitting}
+              />
             );
           })}
 

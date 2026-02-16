@@ -10,12 +10,9 @@ import {
   ConfirmDialog,
   LoadingSpinner,
 } from "@/components/ui";
-import {
-  ProjectInfoCard,
-  ProjectUserCard,
-  statusConfig,
-  formatDate,
-} from "@/components/project";
+import { ProjectInfoCard, ProjectUserCard } from "@/components/project";
+import { statusConfig } from "@/lib/constants/status-configs";
+import { formatDate } from "@/lib/utils/formatters";
 import { ArchiveConfirmModal, StartProcessingModal } from "@/components/admin/modals";
 import {
   ProjectPaymentSummaryCard,

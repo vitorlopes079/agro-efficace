@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     const fileId = crypto.randomBytes(16).toString("hex");
     const fileExtension = fileName.split(".").pop();
-    const fileKey = `pending/${session.user.id}/${fileId}.${fileExtension}`;
+    const fileKey = `files/${session.user.id}/${fileId}.${fileExtension}`;
 
     console.log("🔑 [PRESIGNED] Generated file key:", fileKey);
 
