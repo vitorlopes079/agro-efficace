@@ -20,7 +20,9 @@ export function ProjectInputFilesSection({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-white">Arquivos de Entrada</h2>
+        <h2 className="text-lg font-semibold text-white">
+          Arquivos de Entrada
+        </h2>
         <div className="flex gap-2">
           {hasInputFiles && (
             <button
@@ -60,6 +62,16 @@ export function ProjectInputFilesSection({
           emptyMessage="Nenhum perímetro enviado"
         />
       </div>
+
+      {project.filesGrouped.fotos.length > 0 && (
+        <FileList
+          files={project.filesGrouped.fotos}
+          projectId={project.id}
+          icon={<File className="h-5 w-5 text-zinc-400" />}
+          title="Fotos do Drone"
+          emptyMessage="Nenhuma foto enviada"
+        />
+      )}
 
       {project.filesGrouped.outros.length > 0 && (
         <FileList

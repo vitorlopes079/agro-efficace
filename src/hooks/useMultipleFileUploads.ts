@@ -1,10 +1,14 @@
+// src/hooks/useMultipleFileUploads.ts
 import { useFileUpload } from "./useFileUpload";
 
-export type FileCategory = "ortomosaico" | "perimetro" | "outros";
+export type FileCategory = "ortomosaico" | "fotos" | "perimetro" | "outros";
 
 export function useMultipleFileUploads() {
   // Hook para Ortomosaico
   const ortomosaico = useFileUpload();
+
+  // Hook para Fotos Brutas do Drone
+  const fotos = useFileUpload();
 
   // Hook para Perímetros
   const perimetro = useFileUpload();
@@ -14,14 +18,21 @@ export function useMultipleFileUploads() {
 
   // Aggregate states
   const isUploading =
-    ortomosaico.isUploading || perimetro.isUploading || outros.isUploading;
+    ortomosaico.isUploading ||
+    fotos.isUploading ||
+    perimetro.isUploading ||
+    outros.isUploading;
 
   const hasErrors =
-    ortomosaico.hasErrors || perimetro.hasErrors || outros.hasErrors;
+    ortomosaico.hasErrors ||
+    fotos.hasErrors ||
+    perimetro.hasErrors ||
+    outros.hasErrors;
 
   const getAllCompletedFiles = () => {
     return {
       ortomosaico: ortomosaico.completedFiles,
+      fotos: fotos.completedFiles,
       perimetro: perimetro.completedFiles,
       outros: outros.completedFiles,
     };
@@ -29,6 +40,7 @@ export function useMultipleFileUploads() {
 
   return {
     ortomosaico,
+    fotos,
     perimetro,
     outros,
     isUploading,

@@ -263,6 +263,7 @@ enum FileCategory {
   INPUT_ORTOMOSAICO
   INPUT_PERIMETRO
   INPUT_OTHER
+  INPUT_FOTOS        // ← NOVO
 
   // Output/Deliverable files
   OUTPUT_DJI_SHAPEFILE

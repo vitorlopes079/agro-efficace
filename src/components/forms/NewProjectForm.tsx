@@ -6,14 +6,11 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  Button,
-  CreatingProjectOverlay,
-  useToast,
-} from "@/components/ui";
+import { Button, CreatingProjectOverlay, useToast } from "@/components/ui";
 import { usePermissions } from "@/providers/PermissionProvider";
 import { useProjectFormState } from "@/hooks/useProjectFormState";
 import { useMultipleFileUploads } from "@/hooks/useMultipleFileUploads";
+import { DualFileUploadSection } from "./project-form/DualFileUploadSection";
 import {
   BlockedAccessMessage,
   ProjectInfoSection,
@@ -51,10 +48,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
   const isAdmin = session?.user?.role === "ADMIN";
   const backUrl = isAdmin ? "/admin/projects" : "/dashboard";
 
-  // Form state management
   const { formData, handleInputChange } = useProjectFormState();
-
-  // File uploads management
   const uploads = useMultipleFileUploads();
 
   const handleOrtomosaicoChange = async (
@@ -62,6 +56,15 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
   ) => {
     if (e.target.files) {
       await uploads.ortomosaico.addFiles(e.target.files);
+    }
+  };
+
+  const handleFotosChange = async (
+    // ← NOVO
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (e.target.files) {
+      await uploads.fotos.addFiles(e.target.files);
     }
   };
 
@@ -73,9 +76,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     }
   };
 
-  const handleOutrosChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleOutrosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       await uploads.outros.addFiles(e.target.files);
     }
@@ -85,19 +86,20 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     e.preventDefault();
     setError("");
 
-    // Admin must select a user
     if (isAdmin && !selectedUser) {
       setError("Selecione o proprietário do projeto");
       return;
     }
 
-    // Validar que tem pelo menos 1 ortomosaico
-    if (uploads.ortomosaico.completedFiles.length === 0) {
-      setError("É necessário enviar pelo menos um ortomosaico");
+    // ← ATUALIZADO: ortomosaico OU fotos são válidos
+    if (
+      uploads.ortomosaico.completedFiles.length === 0 &&
+      uploads.fotos.completedFiles.length === 0
+    ) {
+      setError("É necessário enviar o ortomosaico ou as fotos do drone");
       return;
     }
 
-    // Verificar se ainda tem uploads pendentes
     if (uploads.isUploading) {
       setError("Aguarde os arquivos terminarem de fazer upload");
       return;
@@ -118,22 +120,24 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
           projectType: formData.projectType.toUpperCase(),
           culture: formData.culture.toUpperCase(),
           notes: formData.notes || null,
-          // Include userId when admin creates for another user
           ...(isAdmin && selectedUser ? { userId: selectedUser.id } : {}),
           files: [
-            // Ortomosaicos
             ...completedFiles.ortomosaico.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
               category: "INPUT_ORTOMOSAICO",
             })),
-            // Perímetros
+            // ← NOVO
+            ...completedFiles.fotos.map((f) => ({
+              fileKey: f.fileKey,
+              pendingUploadId: f.pendingUploadId,
+              category: "INPUT_FOTOS",
+            })),
             ...completedFiles.perimetro.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
               category: "INPUT_PERIMETRO",
             })),
-            // Outros Arquivos
             ...completedFiles.outros.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
@@ -146,11 +150,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        // CRITICAL: Reset submitting state BEFORE showing error
         setIsSubmitting(false);
         setError(data.error || "Erro ao criar projeto");
-
-        // Also show a toast for better visibility
         toast.error(
           "Erro ao criar projeto",
           data.error || "Ocorreu um erro ao processar sua solicitação.",
@@ -165,12 +166,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
       router.push(backUrl);
     } catch (error) {
       console.error("Error creating project:", error);
-
-      // CRITICAL: Reset submitting state BEFORE showing error
       setIsSubmitting(false);
       setError("Erro ao conectar com o servidor");
-
-      // Also show a toast for better visibility
       toast.error(
         "Erro de conexão",
         "Não foi possível conectar com o servidor. Tente novamente.",
@@ -178,7 +175,6 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     }
   };
 
-  // If user can't upload (and is not admin), show blocked message
   if (!canUpload && !isAdmin) {
     return (
       <BlockedAccessMessage
@@ -190,11 +186,9 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
 
   return (
     <>
-      {/* Loading Overlay */}
       {isSubmitting && <CreatingProjectOverlay />}
 
       <main className="mx-auto max-w-3xl px-6 py-8">
-        {/* Header */}
         <div className="mb-8">
           <Link
             href={backUrl}
@@ -210,14 +204,12 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Error Message */}
           {error && (
             <div className="rounded-md border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               {error}
             </div>
           )}
 
-          {/* Project Info Section */}
           <ProjectInfoSection
             formData={formData}
             projectTypes={initialData.projectTypes}
@@ -229,20 +221,29 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             disabled={isSubmitting}
           />
 
-          {/* Ortomosaico Upload Section */}
-          <FileUploadSection
-            title="Ortomosaico"
+          {/* ← SUBSTITUIU os dois FileUploadSection separados */}
+          <DualFileUploadSection
+            title="Ortomosaico ou Fotos"
             required={true}
-            description="Upload do Ortomosaico"
-            fileTypes="TIF, TIFF, ECW (Imagens georreferenciadas)"
-            files={uploads.ortomosaico.files}
-            onFileChange={handleOrtomosaicoChange}
-            onRemoveFile={uploads.ortomosaico.removeFile}
-            hoverBorderColor="hover:border-green-500/50"
+            leftUpload={{
+              description: "Upload do Ortomosaico",
+              fileTypes: "TIF, TIFF, ECW",
+              files: uploads.ortomosaico.files,
+              onChange: handleOrtomosaicoChange,
+              onRemove: uploads.ortomosaico.removeFile,
+              hoverBorderColor: "hover:border-green-500/50",
+            }}
+            rightUpload={{
+              description: "Upload das Fotos",
+              fileTypes: "ZIP, RAR, 7Z",
+              files: uploads.fotos.files,
+              onChange: handleFotosChange,
+              onRemove: uploads.fotos.removeFile,
+              hoverBorderColor: "hover:border-blue-500/50",
+            }}
             disabled={isSubmitting}
           />
 
-          {/* Perímetros Upload Section */}
           <FileUploadSection
             title="Perímetros de Análise"
             required={false}
@@ -255,7 +256,6 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             disabled={isSubmitting}
           />
 
-          {/* Outros Arquivos Upload Section */}
           <FileUploadSection
             title="Outros Arquivos"
             required={false}
@@ -267,14 +267,12 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             disabled={isSubmitting}
           />
 
-          {/* Notes Section */}
           <NotesSection
             value={formData.notes}
             onChange={handleInputChange}
             disabled={isSubmitting}
           />
 
-          {/* Actions */}
           <div className="flex items-center justify-end gap-3">
             <Button
               type="button"
@@ -286,7 +284,9 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || uploads.isUploading || uploads.hasErrors}
+              disabled={
+                isSubmitting || uploads.isUploading || uploads.hasErrors
+              }
             >
               {isSubmitting
                 ? "Criando..."

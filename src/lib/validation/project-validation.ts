@@ -1,4 +1,7 @@
-import { VALID_PROJECT_TYPES, VALID_CULTURES } from "@/lib/constants/project-constants";
+import {
+  VALID_PROJECT_TYPES,
+  VALID_CULTURES,
+} from "@/lib/constants/project-constants";
 
 export interface ProjectInput {
   projectName: string;
@@ -14,7 +17,9 @@ export interface ValidationError {
   status: number;
 }
 
-export function validateRequiredFields(input: ProjectInput): ValidationError | null {
+export function validateRequiredFields(
+  input: ProjectInput,
+): ValidationError | null {
   if (!input.projectName || !input.projectType || !input.culture) {
     return {
       error: "Nome, tipo e cultura são obrigatórios",
@@ -24,7 +29,9 @@ export function validateRequiredFields(input: ProjectInput): ValidationError | n
   return null;
 }
 
-export function validateFiles(files: ProjectInput["files"]): ValidationError | null {
+export function validateFiles(
+  files: ProjectInput["files"],
+): ValidationError | null {
   if (!files || !Array.isArray(files) || files.length === 0) {
     return {
       error: "É necessário enviar pelo menos um arquivo",
@@ -32,21 +39,22 @@ export function validateFiles(files: ProjectInput["files"]): ValidationError | n
     };
   }
 
-  const hasOrtomosaico = files.some(
-    (f) => f.category === "INPUT_ORTOMOSAICO"
+  const hasOrtomosaicoOrFotos = files.some(
+    (f) => f.category === "INPUT_ORTOMOSAICO" || f.category === "INPUT_FOTOS",
   );
 
-  if (!hasOrtomosaico) {
+  if (!hasOrtomosaicoOrFotos) {
     return {
-      error: "É necessário enviar pelo menos um ortomosaico",
+      error: "É necessário enviar o ortomosaico ou as fotos do drone",
       status: 400,
     };
   }
-
   return null;
 }
 
-export function validateProjectType(projectType: string): ValidationError | null {
+export function validateProjectType(
+  projectType: string,
+): ValidationError | null {
   const projectTypeUpper = projectType.toUpperCase();
 
   if (!VALID_PROJECT_TYPES.includes(projectTypeUpper as any)) {
@@ -73,7 +81,7 @@ export function validateCulture(culture: string): ValidationError | null {
 }
 
 export function validateUserPermissions(
-  user: { status: string; canUpload: boolean } | null
+  user: { status: string; canUpload: boolean } | null,
 ): ValidationError | null {
   if (!user) {
     return {
@@ -100,7 +108,7 @@ export function validateUserPermissions(
 }
 
 export function validateTargetUser(
-  targetUser: { status: string; name: string } | null
+  targetUser: { status: string; name: string } | null,
 ): ValidationError | null {
   if (!targetUser) {
     return {
@@ -119,7 +127,9 @@ export function validateTargetUser(
   return null;
 }
 
-export function validateProjectInput(input: ProjectInput): ValidationError | null {
+export function validateProjectInput(
+  input: ProjectInput,
+): ValidationError | null {
   // Check required fields
   const requiredFieldsError = validateRequiredFields(input);
   if (requiredFieldsError) return requiredFieldsError;

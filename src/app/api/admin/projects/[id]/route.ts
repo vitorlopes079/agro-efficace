@@ -62,6 +62,7 @@ export async function GET(
       perimetros: project.files.filter(
         (f) => f.fileCategory === "INPUT_PERIMETRO",
       ),
+      fotos: project.files.filter((f) => f.fileCategory === "INPUT_FOTOS"),
       outros: project.files.filter((f) => f.fileCategory === "INPUT_OTHER"),
     };
 
@@ -106,6 +107,14 @@ export async function GET(
             uploadedAt: file.uploadedAt.toISOString(),
           })),
           perimetros: filesGrouped.perimetros.map((file) => ({
+            id: file.id,
+            fileName: file.fileName,
+            fileSize: file.fileSize.toString(),
+            fileType: file.fileType,
+            fileKey: file.fileKey,
+            uploadedAt: file.uploadedAt.toISOString(),
+          })),
+          fotos: filesGrouped.fotos.map((file) => ({
             id: file.id,
             fileName: file.fileName,
             fileSize: file.fileSize.toString(),

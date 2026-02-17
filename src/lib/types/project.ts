@@ -33,6 +33,7 @@ export interface ProjectData {
   filesGrouped: {
     ortomosaico: FileData[];
     perimetros: FileData[];
+    fotos: FileData[];
     outros: FileData[];
   };
   totalFiles: number;

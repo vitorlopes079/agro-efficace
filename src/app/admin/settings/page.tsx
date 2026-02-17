@@ -11,13 +11,50 @@ import {
   ConfirmDialog,
   LoadingSpinner,
 } from "@/components/ui";
-import { Plus, Trash2, Save, HardDrive, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Save,
+  HardDrive,
+  AlertTriangle,
+  FileWarning,
+  RefreshCw,
+  User,
+  Clock,
+} from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 interface ConfigItem {
   id: string;
   key: string;
   label: string;
+}
+
+interface OrphanFile {
+  id: string;
+  fileName: string;
+  fileSize: string;
+  fileType: string;
+  fileKey: string;
+  createdAt: string;
+  expiresAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+interface OrphanSummary {
+  totalFiles: number;
+  totalSizeBytes: string;
+  totalSizeMb: string;
+  totalSizeGb: string;
+  byUser: {
+    user: { id: string; name: string; email: string };
+    count: number;
+    totalSizeMb: string;
+  }[];
 }
 
 function generateKey(label: string): string {
@@ -101,8 +138,32 @@ export default function AdminSettingsPage() {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [orphanFiles, setOrphanFiles] = useState<OrphanFile[]>([]);
+  const [orphanSummary, setOrphanSummary] = useState<OrphanSummary | null>(null);
+  const [isLoadingOrphans, setIsLoadingOrphans] = useState(false);
 
   const markAsChanged = () => setHasChanges(true);
+
+  // Fetch orphan files
+  const fetchOrphanFiles = async () => {
+    try {
+      setIsLoadingOrphans(true);
+      const response = await fetch("/api/admin/orphan-files");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch orphan files");
+      }
+
+      const data = await response.json();
+      setOrphanFiles(data.files || []);
+      setOrphanSummary(data.summary || null);
+    } catch (error) {
+      console.error("Error fetching orphan files:", error);
+      toast.error("Erro ao carregar arquivos órfãos");
+    } finally {
+      setIsLoadingOrphans(false);
+    }
+  };
 
   // Fetch data on mount
   useEffect(() => {
@@ -131,6 +192,9 @@ export default function AdminSettingsPage() {
         setStorageLimit(
           systemData.settings?.orphanFilesLimitGb?.toString() || "5",
         );
+
+        // Fetch orphan files after settings load
+        await fetchOrphanFiles();
       } catch (error) {
         console.error("Error fetching settings:", error);
         toast.error("Erro ao carregar configurações");
@@ -224,6 +288,9 @@ export default function AdminSettingsPage() {
       if (data.errors && data.errors.length > 0) {
         console.warn("Cleanup errors:", data.errors);
       }
+
+      // Refresh orphan files list
+      await fetchOrphanFiles();
 
       // Close dialog
       setShowCleanupDialog(false);
@@ -378,6 +445,192 @@ export default function AdminSettingsPage() {
                 bloqueados.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Orphan Files Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileWarning className="h-5 w-5 text-amber-500" />
+                  Arquivos Órfãos
+                </CardTitle>
+                <p className="text-sm text-zinc-400 mt-1">
+                  Arquivos enviados que não estão vinculados a nenhum projeto.
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={fetchOrphanFiles}
+                disabled={isLoadingOrphans}
+                className="gap-2"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoadingOrphans ? "animate-spin" : ""}`}
+                />
+                Atualizar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoadingOrphans ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-5 w-5 animate-spin text-zinc-500" />
+                <span className="ml-2 text-sm text-zinc-500">
+                  Carregando...
+                </span>
+              </div>
+            ) : orphanSummary ? (
+              <div className="space-y-4">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-xs text-zinc-500">Total de Arquivos</p>
+                    <p className="text-xl font-semibold text-white">
+                      {orphanSummary.totalFiles}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-xs text-zinc-500">Espaço Usado</p>
+                    <p className="text-xl font-semibold text-white">
+                      {parseFloat(orphanSummary.totalSizeMb) > 1024
+                        ? `${orphanSummary.totalSizeGb} GB`
+                        : `${orphanSummary.totalSizeMb} MB`}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-xs text-zinc-500">Usuários Afetados</p>
+                    <p className="text-xl font-semibold text-white">
+                      {orphanSummary.byUser.length}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                    <p className="text-xs text-zinc-500">Média por Arquivo</p>
+                    <p className="text-xl font-semibold text-white">
+                      {orphanSummary.totalFiles > 0
+                        ? (
+                            parseFloat(orphanSummary.totalSizeMb) /
+                            orphanSummary.totalFiles
+                          ).toFixed(1)
+                        : "0"}{" "}
+                      MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Files Table */}
+                {orphanFiles.length > 0 ? (
+                  <div className="rounded-lg border border-zinc-800">
+                    <div className="max-h-[400px] overflow-auto">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-zinc-900 border-b border-zinc-800">
+                          <tr>
+                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                              Arquivo
+                            </th>
+                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                              Usuário
+                            </th>
+                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                              Tamanho
+                            </th>
+                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                              Criado em
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800">
+                          {orphanFiles.map((file) => {
+                            const fileSizeMb = (
+                              parseInt(file.fileSize) /
+                              (1024 * 1024)
+                            ).toFixed(2);
+                            const createdAt = new Date(file.createdAt);
+                            const now = new Date();
+                            const ageMinutes = Math.floor(
+                              (now.getTime() - createdAt.getTime()) / 60000
+                            );
+
+                            return (
+                              <tr
+                                key={file.id}
+                                className="hover:bg-zinc-800/50"
+                              >
+                                <td className="px-4 py-2">
+                                  <div className="flex flex-col">
+                                    <span
+                                      className="truncate max-w-[200px] text-zinc-200"
+                                      title={file.fileName}
+                                    >
+                                      {file.fileName}
+                                    </span>
+                                    <span className="text-xs text-zinc-500">
+                                      {file.fileType}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-3.5 w-3.5 text-zinc-500" />
+                                    <span
+                                      className="truncate max-w-[120px] text-zinc-300"
+                                      title={file.user.email}
+                                    >
+                                      {file.user.name}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2 text-zinc-300">
+                                  {fileSizeMb} MB
+                                </td>
+                                <td className="px-4 py-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5 text-zinc-500" />
+                                    <span
+                                      className={`text-xs ${
+                                        ageMinutes > 30
+                                          ? "text-amber-400"
+                                          : "text-zinc-400"
+                                      }`}
+                                    >
+                                      {ageMinutes < 60
+                                        ? `${ageMinutes}min atrás`
+                                        : ageMinutes < 1440
+                                          ? `${Math.floor(ageMinutes / 60)}h atrás`
+                                          : `${Math.floor(ageMinutes / 1440)}d atrás`}
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <FileWarning className="h-10 w-10 text-zinc-600 mb-2" />
+                    <p className="text-zinc-400">
+                      Nenhum arquivo órfão encontrado
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Todos os arquivos estão vinculados a projetos
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <FileWarning className="h-10 w-10 text-zinc-600 mb-2" />
+                <p className="text-zinc-400">
+                  Clique em &quot;Atualizar&quot; para carregar os dados
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
