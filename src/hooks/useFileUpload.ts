@@ -1,9 +1,6 @@
-// src/hooks/useFileUpload.ts
 "use client";
 
 import { useState } from "react";
-import { Upload } from "@aws-sdk/lib-storage";
-import { S3Client } from "@aws-sdk/client-s3";
 
 export interface FileItem {
   id: string;
@@ -26,6 +23,51 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
+const PART_SIZE = 100 * 1024 * 1024; // 100MB por parte
+const CONCURRENT_PARTS = 4; // 4 partes simultâneas
+
+async function uploadPart(
+  presignedUrl: string,
+  chunk: Blob,
+  partNumber: number,
+  onProgress: (loaded: number) => void,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable) {
+        onProgress(event.loaded);
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const etag = xhr.getResponseHeader("ETag");
+        if (!etag) {
+          reject(new Error(`No ETag returned for part ${partNumber}`));
+          return;
+        }
+        resolve(etag);
+      } else {
+        reject(
+          new Error(`Part ${partNumber} failed with status: ${xhr.status}`),
+        );
+      }
+    });
+
+    xhr.addEventListener("error", () =>
+      reject(new Error(`Network error on part ${partNumber}`)),
+    );
+    xhr.addEventListener("abort", () =>
+      reject(new Error(`Part ${partNumber} aborted`)),
+    );
+
+    xhr.open("PUT", presignedUrl);
+    xhr.send(chunk);
+  });
+}
+
 export function useFileUpload() {
   const [files, setFiles] = useState<FileItem[]>([]);
 
@@ -41,7 +83,7 @@ export function useFileUpload() {
 
       console.log("🚀 [UPLOAD] Starting upload for:", fileItem.name);
 
-      // 1. Get credentials
+      // 1. Iniciar multipart no servidor
       const presignedRes = await fetch("/api/upload/presigned", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,65 +96,116 @@ export function useFileUpload() {
 
       if (!presignedRes.ok) {
         const error = await presignedRes.json();
-        throw new Error(error.error || "Erro ao gerar credenciais");
+        throw new Error(error.error || "Erro ao iniciar upload");
       }
 
-      const { fileKey, pendingUploadId, bucket, credentials, endpoint } =
-        await presignedRes.json();
+      const { uploadId, fileKey, pendingUploadId } = await presignedRes.json();
+      console.log(
+        "✅ [UPLOAD] Multipart upload initiated, uploadId:",
+        uploadId,
+      );
 
-      console.log("✅ [CREDENTIALS] Received from backend");
+      // 2. Dividir arquivo em partes
+      const totalSize = fileItem.file.size;
+      const totalParts = Math.ceil(totalSize / PART_SIZE);
+      console.log(
+        `📦 [UPLOAD] File split into ${totalParts} parts of ${PART_SIZE / 1024 / 1024}MB`,
+      );
 
-      // 2. Create S3 client
-      const tempClient = new S3Client({
-        region: "auto",
-        endpoint,
-        credentials: {
-          accessKeyId: credentials.accessKeyId,
-          secretAccessKey: credentials.secretAccessKey,
-        },
-      });
+      // Progress tracking por parte
+      const partProgress: number[] = new Array(totalParts).fill(0);
+      const partSizes: number[] = [];
 
-      // 3. Create Upload object
-      const upload = new Upload({
-        client: tempClient,
-        params: {
-          Bucket: bucket,
-          Key: fileKey,
-          Body: fileItem.file,
-          ContentType: fileItem.file.type || "application/octet-stream",
-        },
-        queueSize: 4,
-        partSize: 100 * 1024 * 1024, // 100 MB
-      });
+      for (let i = 0; i < totalParts; i++) {
+        const start = i * PART_SIZE;
+        const end = Math.min(start + PART_SIZE, totalSize);
+        partSizes.push(end - start);
+      }
 
-      console.log("📦 [UPLOAD] Upload instance created");
-
-      // 4. Progress tracking
-      upload.on("httpUploadProgress", (progress) => {
-        if (progress.loaded && progress.total) {
-          const percent = Math.round((progress.loaded / progress.total) * 100);
-
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === fileItem.id ? { ...f, uploadProgress: percent } : f,
-            ),
-          );
-
-          // Log milestones
-          if (percent % 25 === 0 || percent === 100) {
-            console.log(
-              `📊 [PROGRESS] ${percent}% - Part ${progress.part || "?"}`,
-            );
-          }
+      const updateProgress = () => {
+        const totalLoaded = partProgress.reduce((a, b) => a + b, 0);
+        const percent = Math.round((totalLoaded / totalSize) * 100);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileItem.id ? { ...f, uploadProgress: percent } : f,
+          ),
+        );
+        if (percent % 10 === 0) {
+          console.log(`📊 [PROGRESS] ${percent}%`);
         }
+      };
+
+      // 3. Fazer upload das partes com concorrência
+      const completedParts: { partNumber: number; etag: string }[] = [];
+
+      // Processar partes em grupos de CONCURRENT_PARTS
+      for (let i = 0; i < totalParts; i += CONCURRENT_PARTS) {
+        const batch = [];
+
+        for (let j = i; j < Math.min(i + CONCURRENT_PARTS, totalParts); j++) {
+          const partNumber = j + 1;
+          const start = j * PART_SIZE;
+          const end = Math.min(start + PART_SIZE, totalSize);
+          const chunk = fileItem.file.slice(start, end);
+
+          batch.push(
+            (async () => {
+              // Pedir presigned URL para esta parte
+              const partUrlRes = await fetch("/api/upload/part-url", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uploadId, fileKey, partNumber }),
+              });
+
+              if (!partUrlRes.ok) {
+                throw new Error(`Erro ao gerar URL para parte ${partNumber}`);
+              }
+
+              const { presignedUrl } = await partUrlRes.json();
+
+              console.log(
+                `⬆️ [UPLOAD] Uploading part ${partNumber}/${totalParts}`,
+              );
+
+              const etag = await uploadPart(
+                presignedUrl,
+                chunk,
+                partNumber,
+                (loaded) => {
+                  partProgress[j] = loaded;
+                  updateProgress();
+                },
+              );
+
+              console.log(
+                `✅ [UPLOAD] Part ${partNumber} completed, ETag: ${etag}`,
+              );
+              completedParts.push({ partNumber, etag });
+            })(),
+          );
+        }
+
+        await Promise.all(batch);
+      }
+
+      // 4. Ordenar partes por número
+      completedParts.sort((a, b) => a.partNumber - b.partNumber);
+
+      // 5. Completar multipart no servidor
+      console.log("🔧 [UPLOAD] Completing multipart upload...");
+      const completeRes = await fetch("/api/upload/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadId, fileKey, parts: completedParts }),
       });
 
-      // 5. Execute upload
-      console.log("⬆️ [UPLOAD] Starting upload.done()...");
-      await upload.done();
-      console.log("✅ [UPLOAD] upload.done() completed!");
+      if (!completeRes.ok) {
+        throw new Error("Erro ao completar upload");
+      }
 
-      // 6. Confirm upload in database
+      console.log("✅ [UPLOAD] Multipart upload completed!");
+
+      // 6. Confirmar no banco
       console.log("💾 [CONFIRM] Confirming upload in database...");
       const confirmRes = await fetch("/api/upload/confirm", {
         method: "POST",
