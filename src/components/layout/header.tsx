@@ -36,7 +36,18 @@ export async function Header() {
       <div className="mx-auto flex h-20 w-full items-center justify-between px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center">
-          <div className="relative h-16 w-56">
+          {/* Square logo for mobile */}
+          <div className="relative h-14 w-14 md:hidden">
+            <Image
+              src="/logo-square.png"
+              alt="Agro Efficace Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          {/* Full logo for larger screens */}
+          <div className="relative hidden h-16 w-56 md:block">
             <Image
               src="/logo-branco.png"
               alt="Agro Efficace Logo"

@@ -44,38 +44,55 @@ export async function POST() {
       `📊 [CLEANUP] Found ${orphanedRecords.length} orphaned database records`
     );
 
-    // 3. Delete files from R2 and track results
+    // 3. SAFER APPROACH: Delete DB records FIRST, then R2 files
+    // If R2 deletion fails, orphaned R2 files will be caught by step 4
     const r2DeletedKeys: string[] = [];
     const r2DeleteErrors: string[] = [];
     let totalBytesFreed = 0;
+    let dbRecordsDeleted = 0;
 
-    console.log("🗑️ [CLEANUP] Starting R2 file deletion...");
+    if (orphanedRecords.length > 0) {
+      // 3a. Delete database records first (atomic operation)
+      console.log("🗄️ [CLEANUP] Deleting database records first (safer)...");
 
-    for (const record of orphanedRecords) {
-      try {
-        console.log(`   Deleting: ${record.fileKey}`);
+      const recordIds = orphanedRecords.map((r) => r.id);
+      const deleteResult = await prisma.pendingUpload.deleteMany({
+        where: { id: { in: recordIds } },
+      });
+      dbRecordsDeleted = deleteResult.count;
 
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: R2_BUCKET,
-          Key: record.fileKey,
-        });
+      console.log(`✅ [CLEANUP] Deleted ${dbRecordsDeleted} database records`);
 
-        await r2Client.send(deleteCommand);
+      // 3b. Now delete from R2 (if this fails, files become orphaned R2 files)
+      console.log("🗑️ [CLEANUP] Starting R2 file deletion...");
 
-        r2DeletedKeys.push(record.fileKey);
-        totalBytesFreed += Number(record.fileSize);
+      for (const record of orphanedRecords) {
+        try {
+          console.log(`   Deleting: ${record.fileKey}`);
 
-        console.log(`   ✅ Deleted: ${record.fileKey}`);
-      } catch (error) {
-        const errorMsg = `Failed to delete ${record.fileKey}: ${error instanceof Error ? error.message : "Unknown error"}`;
-        console.error(`   ❌ ${errorMsg}`);
-        r2DeleteErrors.push(errorMsg);
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: R2_BUCKET,
+            Key: record.fileKey,
+          });
+
+          await r2Client.send(deleteCommand);
+
+          r2DeletedKeys.push(record.fileKey);
+          totalBytesFreed += Number(record.fileSize);
+
+          console.log(`   ✅ Deleted: ${record.fileKey}`);
+        } catch (error) {
+          // R2 deletion failed - file will be caught by orphaned R2 check below
+          const errorMsg = `Failed to delete ${record.fileKey}: ${error instanceof Error ? error.message : "Unknown error"}`;
+          console.error(`   ❌ ${errorMsg}`);
+          r2DeleteErrors.push(errorMsg);
+        }
       }
-    }
 
-    console.log(
-      `📊 [CLEANUP] R2 deletion complete: ${r2DeletedKeys.length} files deleted, ${r2DeleteErrors.length} errors`
-    );
+      console.log(
+        `📊 [CLEANUP] R2 deletion complete: ${r2DeletedKeys.length} files deleted, ${r2DeleteErrors.length} errors`
+      );
+    }
 
     // 4. List orphaned R2 files (files in files/ with no database record)
     console.log("🔍 [CLEANUP] Checking for orphaned R2 files without DB records...");
@@ -137,30 +154,7 @@ export async function POST() {
 
     console.log(`📊 [CLEANUP] Found and deleted ${orphanedR2Files} orphaned R2 files`);
 
-    // 5. Delete database records where R2 deletion succeeded
-    console.log("🗄️ [CLEANUP] Deleting database records...");
-
-    const recordsToDelete = orphanedRecords
-      .filter((record) => r2DeletedKeys.includes(record.fileKey))
-      .map((record) => record.id);
-
-    let dbRecordsDeleted = 0;
-    if (recordsToDelete.length > 0) {
-      const deleteResult = await prisma.pendingUpload.deleteMany({
-        where: {
-          id: {
-            in: recordsToDelete,
-          },
-        },
-      });
-
-      dbRecordsDeleted = deleteResult.count;
-      console.log(`✅ [CLEANUP] Deleted ${dbRecordsDeleted} database records`);
-    } else {
-      console.log("ℹ️ [CLEANUP] No database records to delete");
-    }
-
-    // 6. Calculate summary
+    // 5. Calculate summary
     const storageFreedMb = (totalBytesFreed / (1024 * 1024)).toFixed(2);
 
     const summary = {

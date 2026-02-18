@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import crypto from "crypto";
 import { PasswordResetEmailTemplate } from "@/lib/email-templates/password-reset-email";
+import { checkRateLimit, getClientIp, rateLimiters } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -13,6 +14,29 @@ function generateResetToken(): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting - 3 requests per 15 minutes per IP
+    const clientIp = getClientIp(req.headers);
+    const rateLimit = checkRateLimit(
+      `forgot-password:${clientIp}`,
+      rateLimiters.passwordReset
+    );
+
+    if (!rateLimit.success) {
+      const retryAfterSeconds = Math.ceil(
+        (rateLimit.resetAt - Date.now()) / 1000
+      );
+      return NextResponse.json(
+        {
+          error: "Muitas tentativas. Tente novamente mais tarde.",
+          retryAfter: retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": retryAfterSeconds.toString() },
+        }
+      );
+    }
+
     const body = await req.json();
     const { email } = body;
 

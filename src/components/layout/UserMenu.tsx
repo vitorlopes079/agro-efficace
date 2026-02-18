@@ -1,4 +1,3 @@
-// src/components/layout/UserMenu.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -17,7 +16,6 @@ export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -37,29 +35,29 @@ export function UserMenu({ user }: UserMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-zinc-800/50"
+        className="flex items-center gap-2 rounded-lg px-2 py-1.5 md:px-3 md:py-2 transition-colors hover:bg-zinc-800/50"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-zinc-600 to-zinc-700 text-sm font-semibold text-white">
+        <div className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-linear-to-br from-zinc-600 to-zinc-700 text-xs md:text-sm font-semibold text-white">
           {user.initials}
         </div>
-        <span className="text-sm font-medium text-zinc-300">{user.name}</span>
+        {/* Nome e seta escondidos no mobile */}
+        <span className="hidden md:block text-sm font-medium text-zinc-300">
+          {user.name}
+        </span>
         <ChevronDown
-          className={`h-4 w-4 text-zinc-500 transition-transform ${
+          className={`hidden md:block h-4 w-4 text-zinc-500 transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
         />
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-zinc-800 bg-zinc-900 shadow-lg">
-          {/* User Info */}
           <div className="border-b border-zinc-800 px-4 py-3">
             <p className="text-sm font-medium text-white">{user.name}</p>
             <p className="text-xs text-zinc-500">Usuário</p>
           </div>
 
-          {/* Menu Items */}
           <div className="py-1">
             <Link
               href="/change-password"

@@ -1,5 +1,7 @@
 // src/app/api/cleanup-now/route.ts
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import {
   ListMultipartUploadsCommand,
   AbortMultipartUploadCommand,
@@ -8,6 +10,17 @@ import { r2Client, R2_BUCKET } from "@/lib/r2";
 
 export async function GET() {
   try {
+    // Authentication check - admin only
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+    }
+
     console.log("🧹 Starting cleanup...");
 
     // Listar todos uploads incompletos

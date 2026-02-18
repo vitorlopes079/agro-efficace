@@ -1,5 +1,7 @@
 // src/app/api/users/invite/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import crypto from "crypto";
@@ -25,6 +27,19 @@ export async function POST(req: NextRequest) {
   console.log("🚀 [INVITE API] Starting invitation process...");
 
   try {
+    // Authentication check - admin only
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      console.log("❌ [INVITE API] No session found");
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    if (session.user.role !== "ADMIN") {
+      console.log("❌ [INVITE API] User is not admin");
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+    }
+
     // Parse request body
     const body = await req.json();
     console.log("📦 [INVITE API] Request body:", body);
@@ -173,9 +188,11 @@ export async function POST(req: NextRequest) {
         action: "USER_INVITED",
         entityType: "User",
         entityId: user.id,
+        userId: session.user.id, // Track which admin sent the invitation
         metadata: {
           email: user.email,
           role: user.role,
+          invitedBy: session.user.email,
         },
         ipAddress: clientIp,
         userAgent: req.headers.get("user-agent") || null,

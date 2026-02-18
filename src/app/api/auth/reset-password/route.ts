@@ -2,9 +2,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, getClientIp, rateLimiters } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting - 3 requests per 15 minutes per IP
+    const clientIp = getClientIp(req.headers);
+    const rateLimit = checkRateLimit(
+      `reset-password:${clientIp}`,
+      rateLimiters.passwordReset
+    );
+
+    if (!rateLimit.success) {
+      const retryAfterSeconds = Math.ceil(
+        (rateLimit.resetAt - Date.now()) / 1000
+      );
+      return NextResponse.json(
+        {
+          error: "Muitas tentativas. Tente novamente mais tarde.",
+          retryAfter: retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": retryAfterSeconds.toString() },
+        }
+      );
+    }
+
     const body = await req.json();
     const { token, password } = body;
 

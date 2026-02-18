@@ -1,3 +1,4 @@
+export { BottomSheet } from "./bottom-sheet";
 export { Button } from "./button";
 export {
   Card,

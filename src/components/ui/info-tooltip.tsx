@@ -25,10 +25,10 @@ export function InfoTooltip({ text }: InfoTooltipProps) {
         i
       </button>
       {isVisible && (
-        <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-normal text-zinc-300 shadow-lg">
-          <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-zinc-700 bg-zinc-800" />
+        <span className="absolute left-1/2 top-full z-50 mt-2 block w-64 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-normal text-zinc-300 shadow-lg">
+          <span className="absolute -top-1 left-1/2 block h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-zinc-700 bg-zinc-800" />
           {text}
-        </div>
+        </span>
       )}
     </span>
   );

@@ -38,8 +38,9 @@ export default function AdminLayout({
     <>
       <Header />
       <Sidebar items={navItems} />
-      <main className="ml-64 pt-4">
-        <div className="p-8">{children}</div>
+      {/* Main content: no margin on mobile, sidebar margin on desktop */}
+      <main className="pt-4 lg:ml-64">
+        <div className="p-4 pb-20 lg:p-8 lg:pb-8">{children}</div>
       </main>
     </>
   );
