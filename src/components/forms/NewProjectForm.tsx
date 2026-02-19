@@ -59,10 +59,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     }
   };
 
-  const handleFotosChange = async (
-    // ← NOVO
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFotosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       await uploads.fotos.addFiles(e.target.files);
     }
@@ -91,7 +88,6 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
       return;
     }
 
-    // ← ATUALIZADO: ortomosaico OU fotos são válidos
     if (
       uploads.ortomosaico.completedFiles.length === 0 &&
       uploads.fotos.completedFiles.length === 0
@@ -127,7 +123,6 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
               pendingUploadId: f.pendingUploadId,
               category: "INPUT_ORTOMOSAICO",
             })),
-            // ← NOVO
             ...completedFiles.fotos.map((f) => ({
               fileKey: f.fileKey,
               pendingUploadId: f.pendingUploadId,
@@ -197,7 +192,9 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
-          <h1 className="text-xl font-bold text-white sm:text-2xl">Novo Envio</h1>
+          <h1 className="text-xl font-bold text-white sm:text-2xl">
+            Novo Envio
+          </h1>
           <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
             Preencha os dados do projeto para iniciar o processamento
           </p>
@@ -221,7 +218,6 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             disabled={isSubmitting}
           />
 
-          {/* ← SUBSTITUIU os dois FileUploadSection separados */}
           <DualFileUploadSection
             title="Ortomosaico ou Fotos"
             required={true}
@@ -273,12 +269,14 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             disabled={isSubmitting}
           />
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="ghost"
               onClick={() => router.push(backUrl)}
               disabled={isSubmitting || uploads.isUploading}
+              fullWidth
+              className="sm:w-auto"
             >
               Cancelar
             </Button>
@@ -287,6 +285,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
               disabled={
                 isSubmitting || uploads.isUploading || uploads.hasErrors
               }
+              fullWidth
+              className="sm:w-auto"
             >
               {isSubmitting
                 ? "Criando..."

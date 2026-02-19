@@ -14,6 +14,10 @@ export async function Header() {
 
   // Verificar se está em rota admin
   const isAdminRoute = pathname.startsWith("/admin");
+  // Mostrar botão apenas na página principal (dashboard) para mobile
+  const isDashboardPage = pathname === "/dashboard";
+  const shouldShowDesktopButton = !isAdminRoute;
+  const shouldShowMobileButton = !isAdminRoute && isDashboardPage;
 
   const getInitials = (name: string) => {
     return name
@@ -61,9 +65,9 @@ export async function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
-            {!isAdminRoute && (
+            {shouldShowDesktopButton && (
               <>
-                {/* Desktop button */}
+                {/* Desktop button - shows everywhere except admin */}
                 <Link
                   href="/projects/new"
                   className="hidden sm:flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-green-500/25 transition-all hover:shadow-green-500/40 hover:brightness-110"
@@ -79,8 +83,8 @@ export async function Header() {
         </div>
       </header>
 
-      {/* Floating Action Button - Mobile only */}
-      {!isAdminRoute && (
+      {/* Floating Action Button - Mobile only, dashboard only */}
+      {shouldShowMobileButton && (
         <Link
           href="/projects/new"
           className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-2xl shadow-green-500/50 transition-all hover:scale-110 hover:shadow-green-500/70 active:scale-95 sm:hidden"
