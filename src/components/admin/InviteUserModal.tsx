@@ -98,7 +98,7 @@ export function InviteUserModal({
 
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md rounded-lg bg-zinc-900 p-6 shadow-xl">
-        <h2 className="mb-6 text-xl font-bold text-white">Convidar Usuário</h2>
+        <h2 className="mb-6 text-lg font-bold text-white sm:text-xl">Convidar Usuário</h2>
 
         {!inviteLink ? (
           // Form view

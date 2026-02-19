@@ -85,8 +85,8 @@ export function BalanceDetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
           <div>
-            <h2 className="text-xl font-bold text-white">Saldo a Pagar</h2>
-            <p className="text-2xl font-bold text-green-500">
+            <h2 className="text-lg font-bold text-white sm:text-xl">Saldo a Pagar</h2>
+            <p className="text-xl font-bold text-green-500 sm:text-2xl">
               {formatCurrency(totalBalance)}
             </p>
           </div>

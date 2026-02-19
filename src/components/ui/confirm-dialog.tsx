@@ -112,7 +112,7 @@ export function ConfirmDialog({
                 {config.icon}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">{title}</h3>
+                <h3 className="text-base font-semibold text-white sm:text-lg">{title}</h3>
               </div>
             </div>
             {!isLoading && (

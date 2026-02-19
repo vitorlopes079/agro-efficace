@@ -19,27 +19,29 @@ export function ProjectInputFilesSection({
 }: ProjectInputFilesSectionProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-white">
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
+        <h2 className="text-base font-semibold text-white sm:text-lg">
           Arquivos de Entrada
         </h2>
         <div className="flex gap-2">
           {hasInputFiles && (
             <button
               onClick={onDownloadInputZip}
-              className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
             >
               <ArrowDown className="h-4 w-4" />
-              Baixar Arquivos do Cliente
+              <span className="sm:hidden">Cliente</span>
+              <span className="hidden sm:inline">Baixar Arquivos do Cliente</span>
             </button>
           )}
           {project.status === "COMPLETED" && hasOutputFiles && (
             <button
               onClick={onDownloadOutputZip}
-              className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
             >
               <ArrowDown className="h-4 w-4" />
-              Baixar Solução Completa
+              <span className="sm:hidden">Solução</span>
+              <span className="hidden sm:inline">Baixar Solução Completa</span>
             </button>
           )}
         </div>

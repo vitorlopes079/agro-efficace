@@ -1,8 +1,9 @@
 // src/app/admin/users/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Button, DataTable, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { InviteUserModal } from "@/components/admin/InviteUserModal";
 import { userStatusConfig } from "@/lib/constants/status-configs";
@@ -168,10 +169,10 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Usuários</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-xl font-bold sm:text-2xl">Usuários</h1>
+          <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
             {pagination.total} {pagination.total === 1 ? "usuário" : "usuários"}{" "}
             cadastrado
             {pagination.total !== 1 ? "s" : ""}
@@ -196,6 +197,43 @@ export default function AdminUsersPage() {
           totalPages: pagination.totalPages,
           total: pagination.total,
           onPageChange: handlePageChange,
+        }}
+        mobileRender={(user: User, action?: ReactNode) => {
+          const statusConfig =
+            userStatusConfig[user.status.toUpperCase()] || userStatusConfig.INACTIVE;
+          const initials = user.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+          return (
+            <Link
+              href={`/admin/users/${user.id}`}
+              className="flex items-center gap-3 p-4 transition-colors hover:bg-zinc-800/30"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-sm font-semibold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">{user.name}</p>
+                <p className="truncate text-xs text-zinc-500">{user.email}</p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <StatusBadge label={statusConfig.label} variant={statusConfig.variant} />
+                  <span
+                    className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${
+                      user.role === "admin"
+                        ? "bg-emerald-500/15 text-emerald-400"
+                        : "bg-zinc-700 text-zinc-300"
+                    }`}
+                  >
+                    {user.role === "admin" ? "Admin" : "Usuário"}
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-zinc-600" />
+            </Link>
+          );
         }}
       />
 

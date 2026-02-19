@@ -370,10 +370,10 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Configurações</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-xl font-bold sm:text-2xl">Configurações</h1>
+          <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
             Gerencie as configurações do sistema
           </p>
         </div>

@@ -140,7 +140,7 @@ function AcceptInviteContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">❌</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
             Convite Inválido
           </h1>
           <p className="mb-6 text-zinc-400">
@@ -157,7 +157,7 @@ function AcceptInviteContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">⏰</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
             Convite Expirado
           </h1>
           <p className="mb-6 text-zinc-400">
@@ -175,7 +175,7 @@ function AcceptInviteContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">✅</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">Conta Criada!</h1>
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Conta Criada!</h1>
           <p className="mb-6 text-zinc-400">
             Sua conta foi ativada com sucesso. Redirecionando para o login...
           </p>
@@ -193,7 +193,7 @@ function AcceptInviteContent() {
 
         <div className="rounded-lg bg-zinc-900 p-8">
           <div className="mb-6 text-center">
-            <h1 className="mb-2 text-2xl font-bold text-white">
+            <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
               Bem-vindo ao AgroEfficace!
             </h1>
             <p className="text-zinc-400">Configure sua senha para começar</p>

@@ -197,8 +197,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Link>
-          <h1 className="text-2xl font-bold text-white">Novo Envio</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">Novo Envio</h1>
+          <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
             Preencha os dados do projeto para iniciar o processamento
           </p>
         </div>

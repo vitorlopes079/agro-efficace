@@ -109,14 +109,49 @@ export default function AdminLogsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Logs de Auditoria</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl font-bold sm:text-2xl">Logs de Auditoria</h1>
+        <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
           Histórico de ações no sistema - últimos 100 registros
         </p>
       </div>
 
-      <DataTable columns={columns} data={logs} keyExtractor={(log) => log.id} />
+      <DataTable
+        columns={columns}
+        data={logs}
+        keyExtractor={(log) => log.id}
+        mobileRender={(log: AuditLog) => {
+          const actionInfo = auditLogActionConfig[log.action] || {
+            label: log.action,
+            variant: "gray" as const,
+          };
+          const timeAgo = formatDistanceToNow(new Date(log.createdAt), {
+            addSuffix: true,
+            locale: ptBR,
+          });
+          return (
+            <div className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <StatusBadge label={actionInfo.label} variant={actionInfo.variant} />
+                    <span className="text-xs text-zinc-500">{timeAgo}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-white">{log.userName}</p>
+                  <p className="text-xs text-zinc-500">{log.userEmail}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
+                <span>{log.entityType}</span>
+                {log.entityId !== "-" && (
+                  <span className="font-mono">{log.entityId.slice(0, 8)}...</span>
+                )}
+                <span className="font-mono text-zinc-500">{log.ipAddress}</span>
+              </div>
+            </div>
+          );
+        }}
+      />
     </div>
   );
 }

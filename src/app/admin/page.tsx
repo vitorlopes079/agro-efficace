@@ -20,7 +20,7 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="mb-8 text-2xl font-bold">Painel Administrativo</h1>
+      <h1 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl">Painel Administrativo</h1>
 
       {/* Stats Cards */}
       <AdminStats

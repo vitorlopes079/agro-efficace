@@ -152,15 +152,15 @@ export default function FinalizeProjectPage() {
             Voltar ao Projeto
           </Link>
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-8 w-8 text-green-500" />
+            <CheckCircle className="h-6 w-6 text-green-500 sm:h-8 sm:w-8" />
             <div>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-xl font-bold text-white sm:text-2xl">
                 Finalizar Projeto
               </h1>
-              <p className="mt-1 text-sm text-zinc-400">{projectName}</p>
+              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">{projectName}</p>
             </div>
           </div>
-          <p className="mt-4 text-sm text-zinc-400">
+          <p className="mt-4 text-xs text-zinc-400 sm:text-sm">
             Faça upload dos arquivos processados para entregar ao cliente. Os
             arquivos serão organizados e disponibilizados para download.
           </p>

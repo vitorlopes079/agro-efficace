@@ -106,11 +106,11 @@ export default function UserDetailPage() {
 
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-700 text-xl font-bold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-700 text-base font-bold text-white sm:h-16 sm:w-16 sm:text-xl">
               {getInitials(user.name)}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{user.name}</h1>
+              <h1 className="text-xl font-bold text-white sm:text-2xl">{user.name}</h1>
               <div className="mt-1 flex items-center gap-3">
                 <StatusBadge
                   label={userStatusConfig[user.status].label}

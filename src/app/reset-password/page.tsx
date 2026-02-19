@@ -139,7 +139,7 @@ function ResetPasswordContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">❌</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">Link Inválido</h1>
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Link Inválido</h1>
           <p className="mb-6 text-zinc-400">
             Este link de redefinição de senha não é válido ou já foi usado.
           </p>
@@ -156,7 +156,7 @@ function ResetPasswordContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">⏰</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">Link Expirado</h1>
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Link Expirado</h1>
           <p className="mb-6 text-zinc-400">
             Este link de redefinição de senha expirou. Solicite um novo link
             para continuar.
@@ -174,7 +174,7 @@ function ResetPasswordContent() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="w-full max-w-md rounded-lg bg-zinc-900 p-8 text-center">
           <div className="mb-4 text-6xl">✅</div>
-          <h1 className="mb-2 text-2xl font-bold text-white">
+          <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
             Senha Redefinida!
           </h1>
           <p className="mb-6 text-zinc-400">
@@ -194,7 +194,7 @@ function ResetPasswordContent() {
 
         <div className="rounded-lg bg-zinc-900 p-8">
           <div className="mb-6 text-center">
-            <h1 className="mb-2 text-2xl font-bold text-white">
+            <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">
               Redefinir Senha
             </h1>
             <p className="text-zinc-400">Digite sua nova senha</p>

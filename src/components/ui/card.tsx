@@ -33,7 +33,7 @@ interface CardFooterProps {
 export function Card({ children, className = "" }: CardProps) {
   return (
     <div
-      className={`rounded-xl border border-zinc-800 bg-zinc-900/50 ${className}`}
+      className={`overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 ${className}`}
     >
       {children}
     </div>
@@ -49,10 +49,11 @@ export function CardHeader({ children, className = "" }: CardHeaderProps) {
 }
 
 export function CardTitle({ children, className = "" }: CardTitleProps) {
+  const hasTextSize = /text-(xs|sm|base|lg|xl|2xl|3xl)/.test(className);
   return (
-    <h2 className={`text-xl font-semibold text-white ${className}`}>
+    <h3 className={`${hasTextSize ? "" : "text-sm sm:text-base"} font-semibold text-white ${className}`}>
       {children}
-    </h2>
+    </h3>
   );
 }
 

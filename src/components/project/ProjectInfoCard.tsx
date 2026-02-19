@@ -20,7 +20,7 @@ export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInf
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Informações do Projeto</CardTitle>
+        <CardTitle className="text-sm sm:text-base">Informações do Projeto</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2">

@@ -129,10 +129,10 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+      <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold text-white sm:text-2xl">{project.name}</h1>
+          <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
             ID: #{project.id.slice(0, 8)} • Criado em {formatDate(project.createdAt)}
           </p>
         </div>
@@ -149,25 +149,27 @@ export default function ProjectDetailPage() {
 
       {/* Input Files Section */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-white">Arquivos de Entrada</h2>
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Entrada</h2>
           <div className="flex gap-2">
             {inputFiles.length > 0 && (
               <button
                 onClick={handleDownloadInputZip}
-                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
               >
                 <ArrowDown className="h-4 w-4" />
-                Baixar Arquivos do Cliente
+                <span className="sm:hidden">Cliente</span>
+                <span className="hidden sm:inline">Baixar Arquivos do Cliente</span>
               </button>
             )}
             {project.status === "COMPLETED" && outputFiles.length > 0 && (
               <button
                 onClick={handleDownloadOutputZip}
-                className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
               >
                 <ArrowDown className="h-4 w-4" />
-                Baixar Solução Completa
+                <span className="sm:hidden">Solução</span>
+                <span className="hidden sm:inline">Baixar Solução Completa</span>
               </button>
             )}
           </div>
@@ -205,7 +207,7 @@ export default function ProjectDetailPage() {
       {/* Output Files Section */}
       {project.status === "COMPLETED" && outputFiles.length > 0 && (
         <div className="mt-8 space-y-6">
-          <h2 className="text-lg font-semibold text-white">Arquivos de Saída</h2>
+          <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Saída</h2>
 
           <div className="grid gap-6 lg:grid-cols-2">
             {outputDJI.length > 0 && (

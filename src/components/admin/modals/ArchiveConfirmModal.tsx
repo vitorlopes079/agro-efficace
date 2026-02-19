@@ -23,7 +23,7 @@ export function ArchiveConfirmModal({
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Arquivar Projeto</h2>
+          <h2 className="text-base font-semibold text-white sm:text-lg">Arquivar Projeto</h2>
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"

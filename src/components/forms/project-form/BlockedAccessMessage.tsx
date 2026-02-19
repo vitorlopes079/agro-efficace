@@ -28,7 +28,7 @@ export function BlockedAccessMessage({
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
             <ShieldX className="h-8 w-8 text-red-400" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-white">
+          <h2 className="mb-2 text-lg font-bold text-white sm:text-xl">
             Acesso Bloqueado
           </h2>
           <p className="mb-6 max-w-md text-center text-sm text-zinc-400">

@@ -10,7 +10,7 @@ export default function UnauthorizedPage() {
         <div className="mb-4 flex justify-center">
           <ShieldX className="h-16 w-16 text-red-500" />
         </div>
-        <h1 className="mb-2 text-2xl font-bold text-white">Acesso Negado</h1>
+        <h1 className="mb-2 text-xl font-bold text-white sm:text-2xl">Acesso Negado</h1>
         <p className="mb-6 text-zinc-400">
           Você não tem permissão para acessar esta página.
         </p>

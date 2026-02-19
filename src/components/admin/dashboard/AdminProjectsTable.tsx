@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ReactNode } from "react";
 import { Button, DataTable, SearchInput, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { projectStatusConfig } from "@/lib/constants/status-configs";
 import { projectTypeLabels, cultureLabels } from "@/lib/constants/project-constants";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, ChevronRight } from "lucide-react";
 import StatusTabs from "./StatusTabs";
 
 type ProjectStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
@@ -297,6 +298,46 @@ export default function AdminProjectsTable({
             totalPages: pagination.totalPages,
             total: pagination.total,
             onPageChange: handlePageChange,
+          }}
+          mobileRender={(project: Project, action?: ReactNode) => {
+            const config = projectStatusConfig[project.status] || {
+              label: project.status,
+              variant: "gray" as const,
+            };
+            return (
+              <Link
+                href={`/admin/projects/${project.id}`}
+                className="flex items-center gap-3 p-4 transition-colors hover:bg-zinc-800/30"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-white">
+                      {project.name}
+                    </p>
+                    {project.isArchived && (
+                      <StatusBadge label="Arquivado" variant="gray" />
+                    )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <StatusBadge label={config.label} variant={config.variant} />
+                    <span className="text-xs text-zinc-500">
+                      {project.owner.name}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
+                    <span>{projectTypeLabels[project.projectType]} • {cultureLabels[project.culture]}</span>
+                    {project.area && parseFloat(project.area) > 0 && (
+                      <span>{parseFloat(project.area).toFixed(2)} ha</span>
+                    )}
+                    {project.price && parseFloat(project.price) > 0 && (
+                      <span className="text-green-400">R$ {parseFloat(project.price).toFixed(2)}</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">{project.createdAt}</p>
+                </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-zinc-600" />
+              </Link>
+            );
           }}
         />
       )}

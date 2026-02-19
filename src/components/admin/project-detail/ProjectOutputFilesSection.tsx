@@ -73,7 +73,7 @@ export function ProjectOutputFilesSection({
 
   return (
     <div className="mt-8 space-y-6">
-      <h2 className="text-lg font-semibold text-white">Arquivos de Saída</h2>
+      <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Saída</h2>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {visibleGroups.map((group) => (

@@ -159,7 +159,7 @@ export default function RequestInvitePage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <div className="mb-4 text-6xl">✅</div>
-              <h2 className="mb-2 text-xl font-bold text-white">
+              <h2 className="mb-2 text-lg font-bold text-white sm:text-xl">
                 Solicitação Enviada!
               </h2>
               <p className="mb-6 text-zinc-400">

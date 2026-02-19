@@ -56,7 +56,7 @@ export function BottomSheet({
           {/* Header */}
           {title && (
             <div className="flex items-center justify-between px-4 py-3">
-              <h3 className="text-lg font-semibold text-white">{title}</h3>
+              <h3 className="text-base font-semibold text-white sm:text-lg">{title}</h3>
               <button
                 onClick={onClose}
                 className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"

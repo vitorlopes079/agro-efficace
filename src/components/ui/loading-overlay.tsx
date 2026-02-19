@@ -25,7 +25,7 @@ export function LoadingOverlay({
 
         {/* Text */}
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <h3 className="text-base font-semibold text-white sm:text-lg">{title}</h3>
           <p className="mt-2 text-sm text-zinc-400 leading-relaxed">{message}</p>
         </div>
 

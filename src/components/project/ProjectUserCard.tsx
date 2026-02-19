@@ -14,7 +14,7 @@ export function ProjectUserCard({ user }: ProjectUserCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Criado por</CardTitle>
+        <CardTitle className="text-sm sm:text-base">Criado por</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-3">

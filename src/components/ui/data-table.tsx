@@ -43,6 +43,8 @@ interface DataTableProps<T> {
   };
   rowAction?: (item: T) => ReactNode;
   onRowClick?: (item: T) => void;
+  /** Custom mobile card renderer - if provided, shows cards on mobile instead of table */
+  mobileRender?: (item: T, action?: ReactNode) => ReactNode;
 }
 
 export function DataTable<T>({
@@ -52,86 +54,30 @@ export function DataTable<T>({
   pagination,
   rowAction,
   onRowClick,
+  mobileRender,
 }: DataTableProps<T>) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
+  // Pagination component (shared between mobile and desktop)
+  const PaginationControls = () => {
+    if (!pagination || pagination.totalPages <= 1) return null;
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-zinc-800 bg-zinc-900/50">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={`px-6 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 ${
-                    column.align === "right"
-                      ? "text-right"
-                      : column.align === "center"
-                        ? "text-center"
-                        : "text-left"
-                  }`}
-                >
-                  {column.header}
-                </th>
-              ))}
-              {rowAction && (
-                <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                  Ações
-                </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800/50">
-            {data.map((item) => (
-              <tr
-                key={keyExtractor(item)}
-                onClick={() => onRowClick?.(item)}
-                className={`group transition-colors hover:bg-zinc-800/30 ${onRowClick ? "cursor-pointer" : ""}`}
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`whitespace-nowrap px-6 py-4 ${
-                      column.align === "right"
-                        ? "text-right"
-                        : column.align === "center"
-                          ? "text-center"
-                          : "text-left"
-                    }`}
-                  >
-                    {column.render
-                      ? column.render(item)
-                      : String((item as Record<string, unknown>)[column.key] ?? "")}
-                  </td>
-                ))}
-                {rowAction && (
-                  <td className="whitespace-nowrap px-6 py-4 text-right">
-                    {rowAction(item)}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-zinc-800 px-6 py-4">
-          <p className="text-sm text-zinc-500">
-            Página{" "}
-            <span className="font-medium text-zinc-300">{pagination.page}</span>{" "}
-            de{" "}
-            <span className="font-medium text-zinc-300">{pagination.totalPages}</span>{" "}
-            ({pagination.total} itens)
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => pagination.onPageChange(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Anterior
-            </button>
+    return (
+      <div className="flex flex-col gap-3 border-t border-zinc-800 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <p className="text-center text-xs text-zinc-500 sm:text-left sm:text-sm">
+          Página{" "}
+          <span className="font-medium text-zinc-300">{pagination.page}</span>{" "}
+          de{" "}
+          <span className="font-medium text-zinc-300">{pagination.totalPages}</span>{" "}
+          ({pagination.total} itens)
+        </p>
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={() => pagination.onPageChange(pagination.page - 1)}
+            disabled={pagination.page <= 1}
+            className="rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+          >
+            Anterior
+          </button>
+          <div className="hidden sm:flex sm:items-center sm:gap-1">
             {generatePageNumbers(pagination.page, pagination.totalPages).map(
               (pageNum, index) =>
                 pageNum === "..." ? (
@@ -155,16 +101,102 @@ export function DataTable<T>({
                   </button>
                 )
             )}
-            <button
-              onClick={() => pagination.onPageChange(pagination.page + 1)}
-              disabled={pagination.page >= pagination.totalPages}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Próximo
-            </button>
           </div>
+          <span className="px-2 text-xs text-zinc-400 sm:hidden">
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            onClick={() => pagination.onPageChange(pagination.page + 1)}
+            disabled={pagination.page >= pagination.totalPages}
+            className="rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+          >
+            Próximo
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50">
+      {/* Mobile Card View */}
+      {mobileRender && (
+        <div className="divide-y divide-zinc-800/50 md:hidden">
+          {data.map((item) => (
+            <div
+              key={keyExtractor(item)}
+              onClick={() => onRowClick?.(item)}
+              className={onRowClick ? "cursor-pointer" : ""}
+            >
+              {mobileRender(item, rowAction?.(item))}
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Desktop Table View */}
+      <div className={mobileRender ? "hidden md:block" : ""}>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={`px-6 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 ${
+                      column.align === "right"
+                        ? "text-right"
+                        : column.align === "center"
+                          ? "text-center"
+                          : "text-left"
+                    }`}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+                {rowAction && (
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Ações
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-800/50">
+              {data.map((item) => (
+                <tr
+                  key={keyExtractor(item)}
+                  onClick={() => onRowClick?.(item)}
+                  className={`group transition-colors hover:bg-zinc-800/30 ${onRowClick ? "cursor-pointer" : ""}`}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`whitespace-nowrap px-6 py-4 ${
+                        column.align === "right"
+                          ? "text-right"
+                          : column.align === "center"
+                            ? "text-center"
+                            : "text-left"
+                      }`}
+                    >
+                      {column.render
+                        ? column.render(item)
+                        : String((item as Record<string, unknown>)[column.key] ?? "")}
+                    </td>
+                  ))}
+                  {rowAction && (
+                    <td className="whitespace-nowrap px-6 py-4 text-right">
+                      {rowAction(item)}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <PaginationControls />
     </div>
   );
 }

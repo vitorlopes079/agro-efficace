@@ -138,10 +138,10 @@ export default function AdminProjectDetailPage() {
       )}
 
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 className="truncate text-xl font-bold text-white sm:text-2xl">{project.name}</h1>
             <StatusBadge
               label={statusInfo.label}
               variant={statusInfo.variant}
@@ -150,50 +150,60 @@ export default function AdminProjectDetailPage() {
               <StatusBadge label="Arquivado" variant="gray" />
             )}
           </div>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
             ID: #{project.id.slice(0, 8)} • Criado em{" "}
             {formatDate(project.createdAt)}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {project.status === "PENDING" && (
-            <Button onClick={() => setIsProcessingModalOpen(true)}>
+            <Button size="sm" onClick={() => setIsProcessingModalOpen(true)} className="sm:px-4 sm:py-2 sm:text-sm">
               <Play className="h-4 w-4" />
-              Iniciar Processamento
+              <span className="hidden sm:inline">Iniciar Processamento</span>
+              <span className="sm:hidden">Iniciar</span>
             </Button>
           )}
           {project.status === "PROCESSING" && (
-            <Button onClick={handleFinalizeProject}>
+            <Button size="sm" onClick={handleFinalizeProject} className="sm:px-4 sm:py-2 sm:text-sm">
               <CheckCircle className="h-4 w-4" />
-              Finalizar Projeto
+              <span className="hidden sm:inline">Finalizar Projeto</span>
+              <span className="sm:hidden">Finalizar</span>
             </Button>
           )}
           {project.status !== "CANCELLED" && (
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setShowCancelDialog(true)}
+              className="sm:px-4 sm:py-2 sm:text-sm"
             >
               <XCircle className="h-4 w-4" />
-              Cancelar Projeto
+              <span className="hidden sm:inline">Cancelar Projeto</span>
+              <span className="sm:hidden">Cancelar</span>
             </Button>
           )}
           <Button
             variant="secondary"
+            size="sm"
             onClick={() => setIsArchiveModalOpen(true)}
             disabled={project.isArchived}
+            className="sm:px-4 sm:py-2 sm:text-sm"
           >
             <Archive className="h-4 w-4" />
-            {project.isArchived ? "Arquivado" : "Arquivar"}
+            <span className="hidden sm:inline">{project.isArchived ? "Arquivado" : "Arquivar"}</span>
+            <span className="sm:hidden">{project.isArchived ? "Arquivado" : "Arquivar"}</span>
           </Button>
           <Button
             variant="secondary"
+            size="sm"
             onClick={() => setShowDeleteDialog(true)}
-            className="border-red-800 text-red-400 hover:bg-red-500/10 hover:border-red-700"
+            className="border-red-800 text-red-400 hover:bg-red-500/10 hover:border-red-700 sm:px-4 sm:py-2 sm:text-sm"
           >
             <Trash2 className="h-4 w-4" />
-            Deletar Projeto
+            <span className="hidden sm:inline">Deletar Projeto</span>
+            <span className="sm:hidden">Deletar</span>
           </Button>
         </div>
       </div>
