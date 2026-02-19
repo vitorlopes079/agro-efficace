@@ -121,7 +121,7 @@ export function PasswordResetEmailTemplate({
       <body>
         <div class="email-wrapper">
           <div class="header">
-            <img src="https://www.agroefficace.com.br/logo-preto.png" alt="AgroEfficace" width="150" style="margin-bottom: 16px;" />
+            <img src="https://www.agroefficace.com.br/logo-preto.png" alt="AgroEfficace" width="200" style="margin-bottom: 16px;" />
             <h1>Redefinir Senha</h1>
           </div>
 
