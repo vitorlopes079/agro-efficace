@@ -245,7 +245,7 @@ export default function AdminProjectsTable({
         <LoadingSpinner text="Carregando projetos..." />
       ) : projects.length === 0 ? (
         /* Empty State */
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-800 bg-zinc-900/50">
+        <div className="flex min-h-75 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-800 bg-zinc-900/50">
           <FolderOpen className="mb-4 h-12 w-12 text-zinc-600" />
           <p className="text-zinc-400">
             {activeTab === "all"

@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { UserMenu } from "./UserMenu";
 import { headers } from "next/headers";
+import { FloatingNewProjectButton } from "./FloatingNewProjectButton";
 
 export async function Header() {
   const session = await getServerSession(authOptions);
@@ -14,10 +15,7 @@ export async function Header() {
 
   // Verificar se está em rota admin
   const isAdminRoute = pathname.startsWith("/admin");
-  // Mostrar botão apenas na página principal (dashboard) para mobile
-  const isDashboardPage = pathname === "/dashboard";
   const shouldShowDesktopButton = !isAdminRoute;
-  const shouldShowMobileButton = !isAdminRoute && isDashboardPage;
 
   const getInitials = (name: string) => {
     return name
@@ -84,15 +82,7 @@ export async function Header() {
       </header>
 
       {/* Floating Action Button - Mobile only, dashboard only */}
-      {shouldShowMobileButton && (
-        <Link
-          href="/projects/new"
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-2xl shadow-green-500/50 transition-all hover:scale-110 hover:shadow-green-500/70 active:scale-95 sm:hidden"
-          aria-label="Novo envio"
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </Link>
-      )}
+      <FloatingNewProjectButton />
     </>
   );
 }
