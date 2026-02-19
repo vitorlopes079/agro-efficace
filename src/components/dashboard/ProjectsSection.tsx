@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { DataTable, SearchInput, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { projectStatusConfig } from "@/lib/constants/status-configs";
 
@@ -185,7 +186,6 @@ export default function ProjectsSection({
           columns={columns}
           data={projects}
           keyExtractor={(project) => project.id}
-
           onRowClick={(project) => router.push(`/projects/${project.id}`)}
           rowAction={(project) => (
             <button
@@ -198,6 +198,43 @@ export default function ProjectsSection({
               Abrir
             </button>
           )}
+          mobileRender={(project: Project, action?: ReactNode) => {
+            const config = projectStatusConfig[project.status] || {
+              label: project.status,
+              variant: "gray" as const,
+            };
+            return (
+              <Link
+                href={`/projects/${project.id}`}
+                className="flex items-center gap-3 p-4 transition-colors hover:bg-zinc-800/30"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {project.name}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <StatusBadge label={config.label} variant={config.variant} />
+                    <span className="text-xs text-zinc-500">
+                      {project.culture}
+                    </span>
+                    {project.area && parseFloat(project.area) > 0 && (
+                      <span className="text-xs text-zinc-500">
+                        {parseFloat(project.area).toFixed(2)} ha
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
+                    <span>{project.projectType}</span>
+                    <span>•</span>
+                    <span>
+                      {new Date(project.createdAt).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                </div>
+                {action}
+              </Link>
+            );
+          }}
           pagination={{
             page: pagination.page,
             totalPages: pagination.totalPages,

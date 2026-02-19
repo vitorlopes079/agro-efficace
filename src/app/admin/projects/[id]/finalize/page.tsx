@@ -203,18 +203,22 @@ export default function FinalizeProjectPage() {
           </Card>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="secondary"
               onClick={() => router.push(`/admin/projects/${params.id}`)}
               disabled={isSubmitting || isAnyUploading}
+              fullWidth
+              className="sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting || isAnyUploading || hasAnyErrors}
+              fullWidth
+              className="sm:w-auto"
             >
               {isSubmitting
                 ? "Finalizando..."

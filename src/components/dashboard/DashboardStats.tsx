@@ -5,7 +5,7 @@ import { StatCard, BalanceDetailsModal } from "@/components/ui";
 
 const GridIcon = () => (
   <svg
-    className="h-6 w-6"
+    className="h-5 w-5 sm:h-6 sm:w-6"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -17,7 +17,7 @@ const GridIcon = () => (
 
 const MapPinIcon = () => (
   <svg
-    className="h-6 w-6"
+    className="h-5 w-5 sm:h-6 sm:w-6"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -30,7 +30,7 @@ const MapPinIcon = () => (
 
 const CurrencyIcon = () => (
   <svg
-    className="h-6 w-6"
+    className="h-5 w-5 sm:h-6 sm:w-6"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -64,14 +64,14 @@ export default function DashboardStats({
   if (isLoading) {
     return (
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex h-[120px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
-          <div className="text-sm text-zinc-400">Carregando...</div>
+        <div className="flex h-[100px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 sm:h-[120px]">
+          <div className="text-xs text-zinc-400 sm:text-sm">Carregando...</div>
         </div>
-        <div className="flex h-[120px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
-          <div className="text-sm text-zinc-400">Carregando...</div>
+        <div className="flex h-[100px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 sm:h-[120px]">
+          <div className="text-xs text-zinc-400 sm:text-sm">Carregando...</div>
         </div>
-        <div className="flex h-[120px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
-          <div className="text-sm text-zinc-400">Carregando...</div>
+        <div className="flex h-[100px] items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 sm:h-[120px]">
+          <div className="text-xs text-zinc-400 sm:text-sm">Carregando...</div>
         </div>
       </div>
     );

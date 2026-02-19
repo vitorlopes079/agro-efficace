@@ -42,30 +42,30 @@ export function StatCard({
   action,
 }: StatCardProps) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all hover:border-zinc-700 hover:bg-zinc-900">
+    <div className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 transition-all hover:border-zinc-700 hover:bg-zinc-900 sm:p-6">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-zinc-400">{title}</p>
-          <p className="mt-2 text-4xl font-bold tracking-tight">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-medium text-zinc-400 sm:text-sm">{title}</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight sm:mt-2 sm:text-4xl">
             {prefix && (
-              <span className="text-2xl font-medium text-zinc-500">
+              <span className="text-lg font-medium text-zinc-500 sm:text-2xl">
                 {prefix}
               </span>
             )}
             {value}
             {unit && (
-              <span className="text-2xl font-medium text-zinc-500"> {unit}</span>
+              <span className="text-lg font-medium text-zinc-500 sm:text-2xl"> {unit}</span>
             )}
           </p>
         </div>
         <div
-          className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconColorClasses[iconColor]}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${iconColorClasses[iconColor]}`}
         >
           {icon}
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3 sm:mt-4">
         {trend && (
           <div className="flex items-center gap-2 text-xs">
             <span

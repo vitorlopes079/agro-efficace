@@ -517,16 +517,16 @@ export default function AdminSettingsPage() {
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 bg-zinc-900 border-b border-zinc-800">
                           <tr>
-                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                            <th className="px-3 py-2 text-left font-medium text-zinc-400 sm:px-4">
                               Arquivo
                             </th>
-                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                            <th className="hidden px-4 py-2 text-left font-medium text-zinc-400 sm:table-cell">
                               Usuário
                             </th>
-                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                            <th className="hidden px-4 py-2 text-left font-medium text-zinc-400 sm:table-cell">
                               Tamanho
                             </th>
-                            <th className="px-4 py-2 text-left font-medium text-zinc-400">
+                            <th className="hidden px-4 py-2 text-left font-medium text-zinc-400 sm:table-cell">
                               Criado em
                             </th>
                           </tr>
@@ -548,10 +548,11 @@ export default function AdminSettingsPage() {
                                 key={file.id}
                                 className="hover:bg-zinc-800/50"
                               >
-                                <td className="px-4 py-2">
-                                  <div className="flex flex-col">
+                                {/* Mobile: stacked layout | Desktop: just filename */}
+                                <td className="px-3 py-2 sm:px-4">
+                                  <div className="flex flex-col gap-1">
                                     <span
-                                      className="truncate max-w-[200px] text-zinc-200"
+                                      className="truncate text-zinc-200 text-xs sm:text-sm"
                                       title={file.fileName}
                                     >
                                       {file.fileName}
@@ -559,9 +560,17 @@ export default function AdminSettingsPage() {
                                     <span className="text-xs text-zinc-500">
                                       {file.fileType}
                                     </span>
+                                    {/* Mobile only: show user */}
+                                    <div className="flex items-center gap-1.5 sm:hidden">
+                                      <User className="h-3 w-3 text-zinc-500" />
+                                      <span className="text-xs text-zinc-400 truncate">
+                                        {file.user.name}
+                                      </span>
+                                    </div>
                                   </div>
                                 </td>
-                                <td className="px-4 py-2">
+                                {/* Desktop only columns */}
+                                <td className="hidden px-4 py-2 sm:table-cell">
                                   <div className="flex items-center gap-2">
                                     <User className="h-3.5 w-3.5 text-zinc-500" />
                                     <span
@@ -572,10 +581,10 @@ export default function AdminSettingsPage() {
                                     </span>
                                   </div>
                                 </td>
-                                <td className="px-4 py-2 text-zinc-300">
+                                <td className="hidden px-4 py-2 text-zinc-300 sm:table-cell">
                                   {fileSizeMb} MB
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="hidden px-4 py-2 sm:table-cell">
                                   <div className="flex items-center gap-1.5">
                                     <Clock className="h-3.5 w-3.5 text-zinc-500" />
                                     <span
@@ -635,19 +644,19 @@ export default function AdminSettingsPage() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between rounded-lg border border-red-900/30 bg-red-950/20 p-4">
+            <div className="flex flex-col gap-3 rounded-lg border border-red-900/30 bg-red-950/20 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium text-zinc-300">
+                <p className="text-sm font-medium text-zinc-300 sm:text-base">
                   Limpar Arquivos Órfãos Antigos
                 </p>
-                <p className="text-sm text-zinc-500">
+                <p className="text-xs text-zinc-500 sm:text-sm">
                   Remove todos os arquivos órfãos com mais de 30 minutos de
                   todos os usuários.
                 </p>
               </div>
               <Button
                 variant="secondary"
-                className="border-red-800 text-red-400 hover:bg-red-500/10 hover:border-red-700"
+                className="w-full border-red-800 text-red-400 hover:border-red-700 hover:bg-red-500/10 sm:w-auto"
                 onClick={handleCleanupOrphans}
                 disabled={isCleaningUp}
               >
