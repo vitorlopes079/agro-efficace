@@ -24,31 +24,26 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 [INVITE API] Starting invitation process...");
 
   try {
     // Authentication check - admin only
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      console.log("❌ [INVITE API] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     if (session.user.role !== "ADMIN") {
-      console.log("❌ [INVITE API] User is not admin");
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
     // Parse request body
     const body = await req.json();
-    console.log("📦 [INVITE API] Request body:", body);
 
     const { name, email, phone, notes, role } = body;
 
     // Validate required fields
     if (!name || !email || !role) {
-      console.log("❌ [INVITE API] Validation failed: Missing required fields");
       return NextResponse.json(
         { error: "Name, email, and role are required" },
         { status: 400 },
@@ -58,7 +53,6 @@ export async function POST(req: NextRequest) {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log("❌ [INVITE API] Validation failed: Invalid email format");
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 },
@@ -67,44 +61,33 @@ export async function POST(req: NextRequest) {
 
     // Validate role
     if (role !== "ADMIN" && role !== "USER") {
-      console.log("❌ [INVITE API] Validation failed: Invalid role");
       return NextResponse.json(
         { error: "Role must be either ADMIN or USER" },
         { status: 400 },
       );
     }
 
-    console.log("✅ [INVITE API] Validation passed");
 
     // Check if user already exists
-    console.log("🔍 [INVITE API] Checking for existing user...");
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      console.log("❌ [INVITE API] User already exists:", email);
       return NextResponse.json(
         { error: "User with this email already exists" },
         { status: 409 },
       );
     }
 
-    console.log("✅ [INVITE API] No existing user found");
 
     // Generate invitation token
     const invitationToken = generateInvitationToken();
     const invitationExpiresAt = new Date();
     invitationExpiresAt.setHours(invitationExpiresAt.getHours() + 48);
 
-    console.log(
-      "🔑 [INVITE API] Generated invitation token:",
-      invitationToken.substring(0, 10) + "...",
-    );
-    console.log("⏰ [INVITE API] Token expires at:", invitationExpiresAt);
-
+    
     // Create user in database
-    console.log("💾 [INVITE API] Creating user in database...");
     const user = await prisma.user.create({
       data: {
         email,
@@ -118,16 +101,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("✅ [INVITE API] User created successfully:", user.id);
 
     // Create invitation link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const invitationLink = `${baseUrl}/accept-invite?token=${invitationToken}`;
 
-    console.log("🔗 [INVITE API] Invitation link:", invitationLink);
 
     // Send invitation email via Resend
-    console.log("📧 [INVITE API] Sending invitation email...");
     try {
       const emailResult = await resend.emails.send({
         from: "AgroEfficace <noreply@agroefficace.com.br>",
@@ -140,7 +120,6 @@ export async function POST(req: NextRequest) {
         }),
       });
 
-      console.log("📧 [INVITE API] Email result:", emailResult);
 
       // Check if Resend returned an error (they don't throw, they return error in response)
       if (emailResult.error) {
@@ -150,7 +129,6 @@ export async function POST(req: NextRequest) {
         );
 
         // Delete the user if email fails to send
-        console.log("🗑️ [INVITE API] Deleting user due to email failure...");
         await prisma.user.delete({
           where: { id: user.id },
         });
@@ -161,7 +139,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      console.log("✅ [INVITE API] Email sent successfully");
     } catch (emailError) {
       console.error(
         "❌ [INVITE API] Failed to send invitation email (exception):",
@@ -169,7 +146,6 @@ export async function POST(req: NextRequest) {
       );
 
       // Delete the user if email fails to send
-      console.log("🗑️ [INVITE API] Deleting user due to email failure...");
       await prisma.user.delete({
         where: { id: user.id },
       });
@@ -181,7 +157,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Log the invitation action
-    console.log("📝 [INVITE API] Creating audit log...");
     const clientIp = getClientIp(req);
     await prisma.auditLog.create({
       data: {
@@ -199,8 +174,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("✅ [INVITE API] Audit log created");
-    console.log("🎉 [INVITE API] Invitation process completed successfully");
 
     // Return success
     return NextResponse.json(

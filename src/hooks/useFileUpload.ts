@@ -81,7 +81,6 @@ export function useFileUpload() {
         ),
       );
 
-      console.log("🚀 [UPLOAD] Starting upload for:", fileItem.name);
 
       // 1. Iniciar multipart no servidor
       const presignedRes = await fetch("/api/upload/presigned", {
@@ -100,18 +99,11 @@ export function useFileUpload() {
       }
 
       const { uploadId, fileKey, pendingUploadId } = await presignedRes.json();
-      console.log(
-        "✅ [UPLOAD] Multipart upload initiated, uploadId:",
-        uploadId,
-      );
-
+      
       // 2. Dividir arquivo em partes
       const totalSize = fileItem.file.size;
       const totalParts = Math.ceil(totalSize / PART_SIZE);
-      console.log(
-        `📦 [UPLOAD] File split into ${totalParts} parts of ${PART_SIZE / 1024 / 1024}MB`,
-      );
-
+      
       // Progress tracking por parte
       const partProgress: number[] = new Array(totalParts).fill(0);
       const partSizes: number[] = [];
@@ -131,7 +123,6 @@ export function useFileUpload() {
           ),
         );
         if (percent % 10 === 0) {
-          console.log(`📊 [PROGRESS] ${percent}%`);
         }
       };
 
@@ -163,10 +154,7 @@ export function useFileUpload() {
 
               const { presignedUrl } = await partUrlRes.json();
 
-              console.log(
-                `⬆️ [UPLOAD] Uploading part ${partNumber}/${totalParts}`,
-              );
-
+              
               const etag = await uploadPart(
                 presignedUrl,
                 chunk,
@@ -177,10 +165,7 @@ export function useFileUpload() {
                 },
               );
 
-              console.log(
-                `✅ [UPLOAD] Part ${partNumber} completed, ETag: ${etag}`,
-              );
-              completedParts.push({ partNumber, etag });
+                            completedParts.push({ partNumber, etag });
             })(),
           );
         }
@@ -192,7 +177,6 @@ export function useFileUpload() {
       completedParts.sort((a, b) => a.partNumber - b.partNumber);
 
       // 5. Completar multipart no servidor
-      console.log("🔧 [UPLOAD] Completing multipart upload...");
       const completeRes = await fetch("/api/upload/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -203,10 +187,8 @@ export function useFileUpload() {
         throw new Error("Erro ao completar upload");
       }
 
-      console.log("✅ [UPLOAD] Multipart upload completed!");
 
       // 6. Confirmar no banco
-      console.log("💾 [CONFIRM] Confirming upload in database...");
       const confirmRes = await fetch("/api/upload/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -231,7 +213,6 @@ export function useFileUpload() {
         ),
       );
 
-      console.log("🎉 [COMPLETE] Upload completed:", fileItem.name);
     } catch (error) {
       console.error("❌ [ERROR] Upload failed:", error);
       setFiles((prev) =>

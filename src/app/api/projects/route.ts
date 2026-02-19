@@ -25,32 +25,23 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
-  console.log("🚀 [PROJECT API] Starting project creation...");
 
   try {
     // Authentication
     const session = await getServerSession(authOptions);
-    console.log(
-      "👤 [PROJECT API] Session:",
-      session?.user?.email || "No session",
-    );
-
+    
     if (!session) {
-      console.log("❌ [PROJECT API] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     // Check user permissions
-    console.log("🔍 [PROJECT API] Checking user permissions...");
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { canUpload: true, status: true },
     });
-    console.log("📋 [PROJECT API] User status:", user);
 
     const permissionError = validateUserPermissions(user);
     if (permissionError) {
-      console.log("⛔ [PROJECT API] Permission denied:", permissionError.error);
       return NextResponse.json(
         { error: permissionError.error },
         { status: permissionError.status },
@@ -59,7 +50,6 @@ export async function POST(req: NextRequest) {
 
     // Parse and validate input
     const body = await req.json();
-    console.log("📦 [PROJECT API] Request body:", body);
 
     const input: ProjectInput = {
       projectName: body.projectName,
@@ -72,7 +62,6 @@ export async function POST(req: NextRequest) {
 
     const validationError = validateProjectInput(input);
     if (validationError) {
-      console.log("❌ [PROJECT API] Validation error:", validationError.error);
       return NextResponse.json(
         { error: validationError.error },
         { status: validationError.status },
@@ -123,10 +112,7 @@ export async function POST(req: NextRequest) {
     );
 
     const endTime = Date.now();
-    console.log(
-      `🎉 [PROJECT API] Project creation completed successfully in ${endTime - startTime}ms`,
-    );
-
+    
     return NextResponse.json(
       {
         success: true,
@@ -147,22 +133,15 @@ export async function POST(req: NextRequest) {
 const DEFAULT_PAGE_SIZE = 10;
 
 export async function GET(req: NextRequest) {
-  console.log("🚀 [PROJECT API] Fetching projects...");
 
   try {
     const session = await getServerSession(authOptions);
-    console.log(
-      "👤 [PROJECT API] Session:",
-      session?.user?.email || "No session",
-    );
-
+    
     if (!session) {
-      console.log("❌ [PROJECT API] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const isAdmin = session.user.role === "ADMIN";
-    console.log("🔐 [PROJECT API] Is admin:", isAdmin);
 
     // Parse pagination params
     const { searchParams } = new URL(req.url);
@@ -177,16 +156,11 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit;
     const search = searchParams.get("search")?.trim();
 
-    console.log(
-      `📊 [PROJECT API] Pagination - Page: ${page}, Limit: ${limit}, Skip: ${skip}`,
-    );
-    console.log(`🔍 [PROJECT API] Search query: "${search || "none"}"`);
-
+    
     // Build where clause with search
     const whereClause: any = isAdmin ? {} : { userId: session.user.id };
 
     if (search) {
-      console.log("🔍 [PROJECT API] Adding search filters...");
 
       const searchUpper = search.toUpperCase();
 
@@ -213,14 +187,10 @@ export async function GET(req: NextRequest) {
       whereClause.OR = orConditions;
     }
 
-    console.log("💾 [PROJECT API] Where clause:", JSON.stringify(whereClause));
 
     // Get total count
-    console.log("🔢 [PROJECT API] Counting total projects...");
     const total = await prisma.project.count({ where: whereClause });
-    console.log(`✅ [PROJECT API] Total projects: ${total}`);
 
-    console.log("💾 [PROJECT API] Querying database for projects...");
     const projects = await prisma.project.findMany({
       where: whereClause,
       include: {
@@ -242,7 +212,6 @@ export async function GET(req: NextRequest) {
       skip,
       take: limit,
     });
-    console.log(`✅ [PROJECT API] Found ${projects.length} projects`);
 
     const formattedProjects = projects.map((project) => ({
       id: project.id,
@@ -263,7 +232,6 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
-    console.log("🎉 [PROJECT API] Projects fetch completed successfully");
     return NextResponse.json({
       projects: formattedProjects,
       pagination: {

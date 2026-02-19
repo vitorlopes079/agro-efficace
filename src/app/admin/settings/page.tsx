@@ -282,20 +282,12 @@ export default function AdminSettingsPage() {
       const message = `${data.r2FilesDeleted} arquivos removidos, ${data.storageFreedMb}MB liberados`;
       toast.success("Arquivos órfãos removidos com sucesso!", message);
 
-      // Log detailed results to console
-      console.log("Cleanup results:", data);
-
-      if (data.errors && data.errors.length > 0) {
-        console.warn("Cleanup errors:", data.errors);
-      }
-
       // Refresh orphan files list
       await fetchOrphanFiles();
 
       // Close dialog
       setShowCleanupDialog(false);
-    } catch (error) {
-      console.error("Error cleaning up orphans:", error);
+    } catch {
       toast.error("Erro ao limpar arquivos órfãos");
     } finally {
       setIsCleaningUp(false);
@@ -304,9 +296,6 @@ export default function AdminSettingsPage() {
 
   // Save handler
   const handleSave = async () => {
-
-    console.log("🔵 START handleSave");
-    
     try {
       setIsSaving(true);
 

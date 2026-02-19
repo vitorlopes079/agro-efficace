@@ -6,27 +6,21 @@ import { r2Client, R2_BUCKET } from "@/lib/r2";
 import { DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 export async function POST() {
-  console.log("🧹 [CLEANUP] Starting orphaned files cleanup...");
 
   try {
     // 1. Authentication & Authorization
-    console.log("🔐 [CLEANUP] Checking authentication...");
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      console.log("❌ [CLEANUP] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     if (session.user.role !== "ADMIN") {
-      console.log("❌ [CLEANUP] User is not admin");
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    console.log("✅ [CLEANUP] Admin authentication verified");
 
     // 2. Find orphaned database records (older than 30 minutes with status UPLOADED)
-    console.log("🔍 [CLEANUP] Searching for orphaned database records...");
 
     const thirtyMinutesAgo = new Date();
     thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
@@ -40,10 +34,7 @@ export async function POST() {
       },
     });
 
-    console.log(
-      `📊 [CLEANUP] Found ${orphanedRecords.length} orphaned database records`
-    );
-
+    
     // 3. SAFER APPROACH: Delete DB records FIRST, then R2 files
     // If R2 deletion fails, orphaned R2 files will be caught by step 4
     const r2DeletedKeys: string[] = [];
@@ -53,7 +44,6 @@ export async function POST() {
 
     if (orphanedRecords.length > 0) {
       // 3a. Delete database records first (atomic operation)
-      console.log("🗄️ [CLEANUP] Deleting database records first (safer)...");
 
       const recordIds = orphanedRecords.map((r) => r.id);
       const deleteResult = await prisma.pendingUpload.deleteMany({
@@ -61,14 +51,11 @@ export async function POST() {
       });
       dbRecordsDeleted = deleteResult.count;
 
-      console.log(`✅ [CLEANUP] Deleted ${dbRecordsDeleted} database records`);
 
       // 3b. Now delete from R2 (if this fails, files become orphaned R2 files)
-      console.log("🗑️ [CLEANUP] Starting R2 file deletion...");
 
       for (const record of orphanedRecords) {
         try {
-          console.log(`   Deleting: ${record.fileKey}`);
 
           const deleteCommand = new DeleteObjectCommand({
             Bucket: R2_BUCKET,
@@ -80,7 +67,6 @@ export async function POST() {
           r2DeletedKeys.push(record.fileKey);
           totalBytesFreed += Number(record.fileSize);
 
-          console.log(`   ✅ Deleted: ${record.fileKey}`);
         } catch (error) {
           // R2 deletion failed - file will be caught by orphaned R2 check below
           const errorMsg = `Failed to delete ${record.fileKey}: ${error instanceof Error ? error.message : "Unknown error"}`;
@@ -89,13 +75,9 @@ export async function POST() {
         }
       }
 
-      console.log(
-        `📊 [CLEANUP] R2 deletion complete: ${r2DeletedKeys.length} files deleted, ${r2DeleteErrors.length} errors`
-      );
-    }
+          }
 
     // 4. List orphaned R2 files (files in files/ with no database record)
-    console.log("🔍 [CLEANUP] Checking for orphaned R2 files without DB records...");
 
     let orphanedR2Files = 0;
     let continuationToken: string | undefined;
@@ -126,7 +108,6 @@ export async function POST() {
             if (!dbRecord) {
               // Orphaned R2 file with no database record
               try {
-                console.log(`   Deleting orphaned R2 file: ${object.Key}`);
 
                 const deleteCommand = new DeleteObjectCommand({
                   Bucket: R2_BUCKET,
@@ -138,7 +119,6 @@ export async function POST() {
                 orphanedR2Files++;
                 totalBytesFreed += object.Size || 0;
 
-                console.log(`   ✅ Deleted orphaned R2 file: ${object.Key}`);
               } catch (error) {
                 const errorMsg = `Failed to delete orphaned R2 file ${object.Key}: ${error instanceof Error ? error.message : "Unknown error"}`;
                 console.error(`   ❌ ${errorMsg}`);
@@ -152,7 +132,6 @@ export async function POST() {
       continuationToken = listResponse.NextContinuationToken;
     } while (continuationToken);
 
-    console.log(`📊 [CLEANUP] Found and deleted ${orphanedR2Files} orphaned R2 files`);
 
     // 5. Calculate summary
     const storageFreedMb = (totalBytesFreed / (1024 * 1024)).toFixed(2);
@@ -166,14 +145,7 @@ export async function POST() {
       errors: r2DeleteErrors,
     };
 
-    console.log("📊 [CLEANUP] Cleanup summary:");
-    console.log(`   Database records found: ${summary.dbRecordsFound}`);
-    console.log(`   R2 files deleted: ${summary.r2FilesDeleted}`);
-    console.log(`   Database records deleted: ${summary.dbRecordsDeleted}`);
-    console.log(`   Storage freed: ${summary.storageFreedMb}MB`);
-    console.log(`   Errors: ${summary.errors.length}`);
 
-    console.log("🎉 [CLEANUP] Cleanup completed successfully");
 
     return NextResponse.json(summary);
   } catch (error) {

@@ -57,10 +57,7 @@ export function PermissionProvider({ children }: PermissionProviderProps) {
         return;
       }
 
-      console.log(
-        "🔐 [PERMISSION] Checking permissions (once per page load)..."
-      );
-      hasChecked.current = true;
+            hasChecked.current = true;
 
       try {
         const response = await fetch("/api/auth/check-permissions");
@@ -79,17 +76,12 @@ export function PermissionProvider({ children }: PermissionProviderProps) {
 
         // If user is SUSPENDED, log them out immediately
         if (user.status === "SUSPENDED") {
-          console.log("⛔ [PERMISSION] User is banned - logging out...");
           await signOut({ redirect: false });
           router.push("/login?error=banned");
           return;
         }
 
-        console.log("✅ [PERMISSION] Permissions checked successfully", {
-          status: user.status,
-          canUpload: user.canUpload,
-        });
-      } catch (error) {
+              } catch (error) {
         console.error("❌ [PERMISSION] Error checking permissions:", error);
       } finally {
         setIsChecking(false);

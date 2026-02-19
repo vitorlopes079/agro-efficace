@@ -17,10 +17,7 @@ export async function processProjectFile(
   userId: string
 ): Promise<ProcessedFileResult> {
   const fileStart = Date.now();
-  console.log(
-    `📄 [FILE PROCESSOR] Processing file: ${fileData.pendingUploadId}`
-  );
-
+  
   try {
     // Fetch PendingUpload
     const pendingUpload = await prisma.pendingUpload.findUnique({
@@ -28,18 +25,12 @@ export async function processProjectFile(
     });
 
     if (!pendingUpload) {
-      console.log(
-        `⚠️ [FILE PROCESSOR] PendingUpload not found: ${fileData.pendingUploadId}`
-      );
-      throw new Error(
+            throw new Error(
         `PendingUpload not found: ${fileData.pendingUploadId}`
       );
     }
 
-    console.log(
-      `📦 [FILE PROCESSOR] Found pending upload: ${pendingUpload.fileName}`
-    );
-
+    
     // Create File record and update PendingUpload in parallel
     // File stays in its original location - no R2 copy/delete needed
     await Promise.all([
@@ -61,10 +52,7 @@ export async function processProjectFile(
     ]);
 
     const fileEnd = Date.now();
-    console.log(
-      `💾 [FILE PROCESSOR] File linked in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`
-    );
-
+    
     return { success: true, fileName: pendingUpload.fileName };
   } catch (error) {
     console.error(
@@ -87,20 +75,14 @@ export async function processProjectFiles(
   errorCount: number;
   results: PromiseSettledResult<ProcessedFileResult>[];
 }> {
-  console.log(
-    `📁 [FILE PROCESSOR] Processing ${files.length} files in parallel...`
-  );
-  const fileProcessingStart = Date.now();
+    const fileProcessingStart = Date.now();
 
   const results = await Promise.allSettled(
     files.map((fileData) => processProjectFile(fileData, projectId, userId))
   );
 
   const fileProcessingEnd = Date.now();
-  console.log(
-    `⚡ [FILE PROCESSOR] All files processed in ${fileProcessingEnd - fileProcessingStart}ms`
-  );
-
+  
   // Count successes and failures
   const processedCount = results.filter(
     (r) => r.status === "fulfilled" && r.value.success
@@ -124,9 +106,6 @@ export async function processProjectFiles(
     }
   });
 
-  console.log(
-    `📊 [FILE PROCESSOR] Files processed: ${processedCount} success, ${errorCount} errors`
-  );
-
+  
   return { processedCount, errorCount, results };
 }

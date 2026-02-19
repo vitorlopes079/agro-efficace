@@ -22,10 +22,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(
-      `🔑 [PART-URL] Generating presigned URL for part ${partNumber}`,
-    );
-
+    
     const command = new UploadPartCommand({
       Bucket: R2_BUCKET,
       Key: fileKey,
@@ -38,7 +35,6 @@ export async function POST(req: NextRequest) {
       expiresIn: 3600,
     });
 
-    console.log(`✅ [PART-URL] Presigned URL generated for part ${partNumber}`);
 
     return NextResponse.json({ presignedUrl });
   } catch (error) {

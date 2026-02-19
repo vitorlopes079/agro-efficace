@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
     );
     const skip = (page - 1) * limit;
 
-    console.log("🚀 [API] Query params:", { statusParam, search, page, limit });
 
     // Check if requesting archived projects
     const isArchivedTab = statusParam === "archived";
@@ -49,7 +48,6 @@ export async function GET(req: NextRequest) {
 
     // Add search filter if provided
     if (search && search.trim()) {
-      console.log("🔍 [API] Adding search filter:", search.trim());
       const searchTerm = search.trim();
       where.OR = [
         { name: { contains: searchTerm, mode: "insensitive" } },
@@ -83,11 +81,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log("📋 [API] Where clause:", JSON.stringify(where, null, 2));
 
     // Get total count for current filter
     const filteredTotal = await prisma.project.count({ where });
-    console.log("✅ [API] Filtered total:", filteredTotal);
 
     // Fetch projects with user info and pagination
     const projects = await prisma.project.findMany({
@@ -184,11 +180,7 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(filteredTotal / limit);
 
-    console.log("🎉 [API] Returning:", {
-      projectsCount: formattedProjects.length,
-      total: filteredTotal,
-    });
-
+    
     return NextResponse.json({
       projects: formattedProjects,
       counts,

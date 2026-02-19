@@ -17,25 +17,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
-  console.log("🚀 [FINALIZE API] Starting project finalization...");
   const { id: projectId } = await params;
 
   try {
     // 1. Authentication & Authorization
     const session = await getServerSession(authOptions);
-    console.log(
-      "👤 [FINALIZE API] Session:",
-      session?.user?.email || "No session",
-    );
 
     if (!session) {
-      console.log("❌ [FINALIZE API] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     // Check user is ADMIN
     if (session.user.role !== "ADMIN") {
-      console.log("⛔ [FINALIZE API] User is not admin");
       return NextResponse.json(
         { error: "Apenas administradores podem finalizar projetos" },
         { status: 403 },
@@ -43,7 +36,6 @@ export async function POST(
     }
 
     // 2. Check project exists
-    console.log("🔍 [FINALIZE API] Checking project exists...");
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -58,7 +50,6 @@ export async function POST(
     });
 
     if (!project) {
-      console.log("❌ [FINALIZE API] Project not found");
       return NextResponse.json(
         { error: "Projeto não encontrado" },
         { status: 404 },
@@ -66,24 +57,20 @@ export async function POST(
     }
 
     if (project.user.status !== "ACTIVE") {
-      console.log("⛔ [FINALIZE API] Project owner is not active");
       return NextResponse.json(
         { error: "O proprietário do projeto não está ativo" },
         { status: 400 },
       );
     }
 
-    console.log("✅ [FINALIZE API] Project found:", project.name);
 
     // 3. Validate Request Body
     const body = await req.json();
-    console.log("📦 [FINALIZE API] Request body:", body);
 
     const { files } = body;
 
     // Validate files array
     if (!files || !Array.isArray(files) || files.length === 0) {
-      console.log("❌ [FINALIZE API] No files provided");
       return NextResponse.json(
         { error: "É necessário enviar pelo menos um arquivo" },
         { status: 400 },
@@ -106,19 +93,14 @@ export async function POST(
     );
 
     if (invalidCategories.length > 0) {
-      console.log("❌ [FINALIZE API] Invalid categories found");
       return NextResponse.json(
         { error: "Categorias de arquivo inválidas" },
         { status: 400 },
       );
     }
 
-    console.log("✅ [FINALIZE API] Validation passed");
 
     // 4. Process Each File in PARALLEL
-    console.log(
-      `📁 [FINALIZE API] Processing ${files.length} files in parallel...`,
-    );
     const fileProcessingStart = Date.now();
 
     const processedCategories = new Set<string>();
@@ -126,9 +108,6 @@ export async function POST(
     const results = await Promise.allSettled(
       files.map(async (fileData) => {
         const fileStart = Date.now();
-        console.log(
-          `📄 [FINALIZE API] Processing file: ${fileData.pendingUploadId}`,
-        );
 
         // Fetch PendingUpload
         const pendingUpload = await prisma.pendingUpload.findUnique({
@@ -136,17 +115,10 @@ export async function POST(
         });
 
         if (!pendingUpload) {
-          console.log(
-            `⚠️ [FINALIZE API] PendingUpload not found: ${fileData.pendingUploadId}`,
-          );
           throw new Error(
             `PendingUpload not found: ${fileData.pendingUploadId}`,
           );
         }
-
-        console.log(
-          `📦 [FINALIZE API] Found pending upload: ${pendingUpload.fileName}`,
-        );
 
         // Create File record and update PendingUpload in parallel
         // File stays in its original location - no R2 copy/delete needed
@@ -169,11 +141,6 @@ export async function POST(
           }),
         ]);
 
-        const fileEnd = Date.now();
-        console.log(
-          `💾 [FINALIZE API] File linked in ${fileEnd - fileStart}ms: ${pendingUpload.fileName}`,
-        );
-
         processedCategories.add(fileData.category);
         return {
           success: true,
@@ -181,11 +148,6 @@ export async function POST(
           category: fileData.category,
         };
       }),
-    );
-
-    const fileProcessingEnd = Date.now();
-    console.log(
-      `⚡ [FINALIZE API] All files processed in ${fileProcessingEnd - fileProcessingStart}ms`,
     );
 
     // Count successes and failures
@@ -204,13 +166,8 @@ export async function POST(
       }
     });
 
-    console.log(
-      `📊 [FINALIZE API] Files processed: ${processedCount} success, ${errorCount} errors`,
-    );
-
     // If no files were processed successfully, don't update project status
     if (processedCount === 0) {
-      console.log("❌ [FINALIZE API] No files were processed successfully");
       return NextResponse.json(
         { error: "Erro ao processar arquivos" },
         { status: 500 },
@@ -218,7 +175,6 @@ export async function POST(
     }
 
     // 5. Update Project Status to COMPLETED
-    console.log("💾 [FINALIZE API] Updating project status to COMPLETED...");
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
@@ -226,10 +182,8 @@ export async function POST(
         completedAt: new Date(),
       },
     });
-    console.log("✅ [FINALIZE API] Project status updated to COMPLETED");
 
     // 6. Create Audit Log
-    console.log("📝 [FINALIZE API] Creating audit log...");
     await prisma.auditLog.create({
       data: {
         action: "PROJECT_FINALIZED",
@@ -246,12 +200,6 @@ export async function POST(
         userAgent: req.headers.get("user-agent") || null,
       },
     });
-    console.log("✅ [FINALIZE API] Audit log created");
-
-    const endTime = Date.now();
-    console.log(
-      `🎉 [FINALIZE API] Project finalization completed successfully in ${endTime - startTime}ms`,
-    );
 
     // 7. Return Success Response
     return NextResponse.json(

@@ -6,7 +6,6 @@ import { PassThrough, Readable } from "stream";
 
 export async function generateOutputZip(projectId: string): Promise<void> {
   const startTime = Date.now();
-  console.log(`🔨 [GENERATE OUTPUT ZIP] Starting for project: ${projectId}`);
 
   try {
     // Get project OUTPUT files
@@ -21,14 +20,10 @@ export async function generateOutputZip(projectId: string): Promise<void> {
     });
 
     if (!project || project.files.length === 0) {
-      console.log("⚠️ [GENERATE OUTPUT ZIP] No output files found");
       return;
     }
 
-    console.log(
-      `📁 [GENERATE OUTPUT ZIP] Processing ${project.files.length} files`,
-    );
-
+    
     // Create archive
     const archive = archiver("zip", { zlib: { level: 0 } });
     const passThrough = new PassThrough();
@@ -53,7 +48,6 @@ export async function generateOutputZip(projectId: string): Promise<void> {
     // Add files to archive
     for (const file of project.files) {
       try {
-        console.log(`   📄 Adding: ${file.fileName}`);
 
         const getCommand = new GetObjectCommand({
           Bucket: R2_BUCKET,
@@ -71,7 +65,6 @@ export async function generateOutputZip(projectId: string): Promise<void> {
       }
     }
 
-    console.log("🔐 [GENERATE OUTPUT ZIP] Finalizing archive...");
     archive.finalize();
 
     // Wait for all chunks
@@ -79,11 +72,9 @@ export async function generateOutputZip(projectId: string): Promise<void> {
 
     const zipBuffer = Buffer.concat(chunks);
     const zipSizeMB = (zipBuffer.length / 1024 / 1024).toFixed(2);
-    console.log(`📦 [GENERATE OUTPUT ZIP] ZIP size: ${zipSizeMB} MB`);
 
     // Upload to R2
     const zipKey = `projects/${projectId}/downloads/output-files.zip`;
-    console.log(`☁️ [GENERATE OUTPUT ZIP] Uploading to R2: ${zipKey}`);
 
     const putCommand = new PutObjectCommand({
       Bucket: R2_BUCKET,
@@ -95,10 +86,7 @@ export async function generateOutputZip(projectId: string): Promise<void> {
     await r2Client.send(putCommand);
 
     const endTime = Date.now();
-    console.log(
-      `✅ [GENERATE OUTPUT ZIP] Completed in ${endTime - startTime}ms (${zipSizeMB} MB)`,
-    );
-  } catch (error) {
+      } catch (error) {
     console.error("💥 [GENERATE OUTPUT ZIP] Error:", error);
     throw error;
   }

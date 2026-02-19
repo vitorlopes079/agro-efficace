@@ -119,7 +119,6 @@ export async function GET() {
           mes: monthName.charAt(0).toUpperCase() + monthName.slice(1),
           receita: cachedRevenue,
         });
-        console.log(`📦 [CACHE HIT] ${monthKey}: ${cachedRevenue}`);
       } else {
         // Need to fetch from DB
         monthsToFetch.push(monthKey);
@@ -128,7 +127,6 @@ export async function GET() {
 
     // Fetch only uncached months from database
     if (monthsToFetch.length > 0) {
-      console.log(`🔍 [CACHE MISS] Fetching months:`, monthsToFetch);
 
       const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
@@ -175,10 +173,7 @@ export async function GET() {
           receita: revenue,
         });
 
-        console.log(
-          `💾 [CACHED] ${monthKey}: ${revenue} (TTL: ${isCurrent ? "5min" : "24h"})`,
-        );
-      }
+              }
     }
 
     // Sort by month order (oldest to newest)

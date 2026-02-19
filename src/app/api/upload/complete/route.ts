@@ -21,10 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(
-      `✅ [COMPLETE] Completing multipart upload with ${parts.length} parts`,
-    );
-
+    
     const command = new CompleteMultipartUploadCommand({
       Bucket: R2_BUCKET,
       Key: fileKey,
@@ -39,7 +36,6 @@ export async function POST(req: NextRequest) {
 
     await r2Client.send(command);
 
-    console.log("🎉 [COMPLETE] Multipart upload completed!");
 
     return NextResponse.json({ success: true });
   } catch (error) {

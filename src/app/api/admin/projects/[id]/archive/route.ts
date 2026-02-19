@@ -22,13 +22,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  console.log("🗄️ [ARCHIVE API] Starting project archive...");
 
   try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "ADMIN") {
-      console.log("❌ [ARCHIVE API] Unauthorized access attempt");
       return NextResponse.json(
         { error: "Acesso não autorizado" },
         { status: 403 },
@@ -36,7 +34,6 @@ export async function POST(
     }
 
     const { id: projectId } = await params;
-    console.log(`📦 [ARCHIVE API] Archiving project: ${projectId}`);
 
     // Fetch project with files
     const project = await prisma.project.findUnique({
@@ -47,7 +44,6 @@ export async function POST(
     });
 
     if (!project) {
-      console.log("❌ [ARCHIVE API] Project not found");
       return NextResponse.json(
         { error: "Projeto não encontrado" },
         { status: 404 },
@@ -55,7 +51,6 @@ export async function POST(
     }
 
     if (project.isArchived) {
-      console.log("⚠️ [ARCHIVE API] Project already archived");
       return NextResponse.json(
         { error: "Projeto já está arquivado" },
         { status: 400 },
@@ -63,24 +58,19 @@ export async function POST(
     }
 
     if (project.files.length === 0) {
-      console.log("⚠️ [ARCHIVE API] No files to archive");
       return NextResponse.json(
         { error: "Projeto não possui arquivos para arquivar" },
         { status: 400 },
       );
     }
 
-    console.log(
-      `📁 [ARCHIVE API] Found ${project.files.length} files to archive`,
-    );
-
+    
     let archivedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
     for (const file of project.files) {
       try {
-        console.log(`🔄 [ARCHIVE API] Processing file: ${file.fileName}`);
 
         // Check if file exists and get its current storage class
         try {
@@ -92,10 +82,7 @@ export async function POST(
 
           // Skip if already in Infrequent Access
           if (headResponse.StorageClass === StorageClass.STANDARD_IA) {
-            console.log(
-              `⏭️ [ARCHIVE API] File already archived: ${file.fileName}`,
-            );
-            archivedCount++;
+                        archivedCount++;
             continue;
           }
         } catch (headError) {
@@ -118,10 +105,7 @@ export async function POST(
         });
 
         await r2Client.send(copyCommand);
-        console.log(
-          `✅ [ARCHIVE API] File moved to Infrequent Access: ${file.fileName}`,
-        );
-
+        
         archivedCount++;
       } catch (fileError) {
         console.error(
@@ -133,10 +117,7 @@ export async function POST(
       }
     }
 
-    console.log(
-      `📊 [ARCHIVE API] Archive completed: ${archivedCount} success, ${errorCount} errors`,
-    );
-
+    
     // Update project status
     await prisma.project.update({
       where: { id: projectId },

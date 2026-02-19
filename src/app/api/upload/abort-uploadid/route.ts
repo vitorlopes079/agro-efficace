@@ -15,11 +15,6 @@ export async function POST(req: NextRequest) {
     const { uploadId, fileKey } = await req.json();
 
     // 🔍 ADDED: Detailed debug logs
-    console.log("🔍 [DEBUG] Received uploadId:", uploadId);
-    console.log("🔍 [DEBUG] Received fileKey:", fileKey);
-    console.log("🔍 [DEBUG] uploadId type:", typeof uploadId);
-    console.log("🔍 [DEBUG] uploadId length:", uploadId?.length);
-    console.log("🔍 [DEBUG] R2_BUCKET:", R2_BUCKET);
 
     if (!uploadId || !fileKey) {
       return NextResponse.json(
@@ -28,8 +23,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("🧹 [ABORT-UPLOADID] Aborting uploadId:", uploadId);
-    console.log("🧹 [ABORT-UPLOADID] File key:", fileKey);
 
     const command = new AbortMultipartUploadCommand({
       Bucket: R2_BUCKET,
@@ -37,9 +30,7 @@ export async function POST(req: NextRequest) {
       UploadId: uploadId,
     });
 
-    console.log("🔍 [DEBUG] Sending abort command...");
     const result = await r2Client.send(command);
-    console.log("✅ [ABORT-UPLOADID] Successfully aborted! Result:", result);
 
     return NextResponse.json({
       success: true,
@@ -57,7 +48,6 @@ export async function POST(req: NextRequest) {
 
     // Se o upload já foi completado/abortado, não é erro
     if (error.name === "NoSuchUpload" || error.Code === "NoSuchUpload") {
-      console.log("ℹ️ [ABORT-UPLOADID] Upload already completed or aborted");
       return NextResponse.json({
         success: true,
         message: "Upload already completed or aborted",

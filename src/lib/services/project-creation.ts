@@ -27,17 +27,12 @@ export async function determineProjectOwner(
 
   // If admin provides a userId, validate and use it
   if (isAdmin && targetUserId) {
-    console.log(
-      "🔍 [PROJECT CREATION] Admin creating project for user:",
-      targetUserId
-    );
-    const targetUser = await prisma.user.findUnique({
+        const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: { status: true, name: true },
     });
 
     if (!targetUser) {
-      console.log("❌ [PROJECT CREATION] Target user not found");
       return {
         ownerId: sessionUserId,
         error: {
@@ -48,7 +43,6 @@ export async function determineProjectOwner(
     }
 
     if (targetUser.status !== "ACTIVE") {
-      console.log("❌ [PROJECT CREATION] Target user is not active");
       return {
         ownerId: sessionUserId,
         error: {
@@ -58,10 +52,7 @@ export async function determineProjectOwner(
       };
     }
 
-    console.log(
-      `✅ [PROJECT CREATION] Creating project for user: ${targetUser.name}`
-    );
-    ownerId = targetUserId;
+        ownerId = targetUserId;
   }
 
   return { ownerId };
@@ -71,7 +62,6 @@ export async function createProject(
   input: ProjectInput,
   ownerId: string
 ): Promise<CreateProjectResult> {
-  console.log("💾 [PROJECT CREATION] Creating project in database...");
 
   try {
     const project = await prisma.project.create({
@@ -85,7 +75,6 @@ export async function createProject(
       },
     });
 
-    console.log("✅ [PROJECT CREATION] Project created:", project.id);
 
     return {
       success: true,
@@ -132,10 +121,7 @@ export async function createProjectWithFiles(
 
   // If no files were processed successfully, delete the project
   if (processedCount === 0) {
-    console.log(
-      "❌ [PROJECT CREATION] No files were processed successfully, deleting project"
-    );
-    await prisma.project.delete({ where: { id: project.id } });
+        await prisma.project.delete({ where: { id: project.id } });
     return {
       success: false,
       error: "Erro ao processar arquivos",
@@ -165,7 +151,6 @@ export async function createAuditLog(
   ipAddress: string,
   userAgent: string | null
 ): Promise<void> {
-  console.log("📝 [PROJECT CREATION] Creating audit log...");
 
   await prisma.auditLog.create({
     data: {
@@ -188,5 +173,4 @@ export async function createAuditLog(
     },
   });
 
-  console.log("✅ [PROJECT CREATION] Audit log created");
 }

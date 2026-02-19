@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 [CONFIRM UPLOAD] Starting upload confirmation...");
 
   try {
     const session = await getServerSession(authOptions);
@@ -49,7 +48,6 @@ export async function POST(req: NextRequest) {
       data: { status: "UPLOADED" },
     });
 
-    console.log("✅ [CONFIRM UPLOAD] Upload confirmed:", pendingUploadId);
 
     return NextResponse.json({
       success: true,

@@ -176,12 +176,6 @@ export default function AdminProjectsTable({
     search: string = "",
   ) => {
     setIsLoading(true);
-    console.log("🔍 [AdminProjectsTable] fetchProjects called with:", {
-      status,
-      page,
-      search,
-      searchTrimmed: search.trim(),
-    });
 
     try {
       const params = new URLSearchParams({
@@ -191,27 +185,16 @@ export default function AdminProjectsTable({
 
       if (status !== "all") {
         params.set("status", status);
-        console.log("📌 [AdminProjectsTable] Added status filter:", status);
       }
 
       if (search.trim()) {
         params.append("search", search.trim());
-        console.log(
-          "🔎 [AdminProjectsTable] Added search term:",
-          search.trim(),
-        );
       }
 
       const url = `/api/admin/projects?${params.toString()}`;
-      console.log("🌐 [AdminProjectsTable] Fetching URL:", url);
 
       const response = await fetch(url);
       const data = await response.json();
-
-      console.log("✅ [AdminProjectsTable] Response received:", {
-        projectsCount: data.projects?.length,
-        total: data.pagination?.total,
-      });
 
       if (response.ok) {
         setProjects(data.projects);

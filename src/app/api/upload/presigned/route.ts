@@ -7,7 +7,6 @@ import { CreateMultipartUploadCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 [PRESIGNED] Starting upload initialization...");
 
   try {
     const session = await getServerSession(authOptions);
@@ -43,7 +42,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Check storage limit
-    console.log("📊 [PRESIGNED] Checking storage limit...");
     const systemSettings = await prisma.systemSettings.findFirst();
     const limitGb = systemSettings?.orphanFilesLimitGb || 5;
     const limitBytes = limitGb * 1024 * 1024 * 1024;
@@ -60,10 +58,7 @@ export async function POST(req: NextRequest) {
     );
     const newTotalGb = (newTotalBytes / (1024 * 1024 * 1024)).toFixed(2);
 
-    console.log(
-      `💾 [PRESIGNED] Current: ${currentUsageGb}GB, After: ${newTotalGb}GB`,
-    );
-
+    
     if (newTotalBytes > limitBytes) {
       return NextResponse.json(
         {
@@ -81,7 +76,6 @@ export async function POST(req: NextRequest) {
     const fileExtension = fileName.split(".").pop();
     const fileKey = `files/${session.user.id}/${fileId}.${fileExtension}`;
 
-    console.log("🔑 [PRESIGNED] Generated file key:", fileKey);
 
     // ✅ Create multipart upload on SERVER - never expose credentials
     const command = new CreateMultipartUploadCommand({
@@ -96,11 +90,7 @@ export async function POST(req: NextRequest) {
       throw new Error("Failed to create multipart upload");
     }
 
-    console.log(
-      "✅ [PRESIGNED] Multipart upload created:",
-      multipartUpload.UploadId,
-    );
-
+    
     // Create pending upload record
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
@@ -117,7 +107,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("💾 [PRESIGNED] Created pending upload:", pendingUpload.id);
 
     // ✅ Return only uploadId - NO credentials!
     return NextResponse.json({

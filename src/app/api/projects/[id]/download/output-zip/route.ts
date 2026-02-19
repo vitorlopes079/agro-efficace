@@ -15,17 +15,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const startTime = Date.now();
-  console.log("📦 [OUTPUT ZIP] Starting on-demand ZIP generation...");
 
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      console.log("❌ [OUTPUT ZIP] No session");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { id: projectId } = await params;
-    console.log(`🔍 [OUTPUT ZIP] Project ID: ${projectId}`);
 
     // Check authorization
     const project = await prisma.project.findUnique({
@@ -39,7 +36,6 @@ export async function GET(
     });
 
     if (!project) {
-      console.log("❌ [OUTPUT ZIP] Project not found");
       return NextResponse.json(
         { error: "Projeto não encontrado" },
         { status: 404 },
@@ -48,12 +44,10 @@ export async function GET(
 
     const isAdmin = session.user.role === "ADMIN";
     if (!isAdmin && project.userId !== session.user.id) {
-      console.log("❌ [OUTPUT ZIP] Access denied");
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
     if (project.status !== "COMPLETED") {
-      console.log("⚠️ [OUTPUT ZIP] Project not completed yet");
       return NextResponse.json(
         { error: "Projeto ainda não finalizado" },
         { status: 400 },
@@ -61,17 +55,13 @@ export async function GET(
     }
 
     if (project.files.length === 0) {
-      console.log("❌ [OUTPUT ZIP] No output files found");
       return NextResponse.json(
         { error: "Nenhum arquivo de saída encontrado" },
         { status: 404 },
       );
     }
 
-    console.log(
-      `📁 [OUTPUT ZIP] Creating ZIP for ${project.files.length} files`,
-    );
-
+    
     const archive = archiver("zip", { zlib: { level: 0 } });
 
     const folderMapping: Record<string, string> = {
@@ -84,10 +74,8 @@ export async function GET(
       OUTPUT_OTHER: "Outros Arquivos",
     };
 
-    console.log("📥 [OUTPUT ZIP] Adding files to archive...");
     for (const file of project.files) {
       try {
-        console.log(`   📄 Adding: ${file.fileName}`);
 
         const getCommand = new GetObjectCommand({
           Bucket: R2_BUCKET,
@@ -105,10 +93,8 @@ export async function GET(
       }
     }
 
-    console.log("🔐 [OUTPUT ZIP] Finalizing archive...");
     archive.finalize();
 
-    console.log("📤 [OUTPUT ZIP] Converting to Web Stream...");
 
     // Manual conversion to DOM Web Stream
     const webStream = new ReadableStream({
@@ -129,7 +115,6 @@ export async function GET(
     });
 
     const endTime = Date.now();
-    console.log(`✅ [OUTPUT ZIP] ZIP ready in ${endTime - startTime}ms`);
 
     return new Response(webStream, {
       headers: {

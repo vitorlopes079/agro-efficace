@@ -275,23 +275,19 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  console.log("🗑️ [DELETE PROJECT] Starting project deletion...");
 
   try {
     const session = await getServerSession(authOptions);
 
     if (!session) {
-      console.log("❌ [DELETE PROJECT] No session found");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     if (session.user.role !== "ADMIN") {
-      console.log("❌ [DELETE PROJECT] User is not admin");
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
     const { id } = await params;
-    console.log(`📋 [DELETE PROJECT] Project ID: ${id}`);
 
     // 1. Fetch project with files
     const project = await prisma.project.findUnique({
@@ -302,15 +298,12 @@ export async function DELETE(
     });
 
     if (!project) {
-      console.log("❌ [DELETE PROJECT] Project not found");
       return NextResponse.json(
         { error: "Projeto não encontrado" },
         { status: 404 },
       );
     }
 
-    console.log(`📊 [DELETE PROJECT] Found project: ${project.name}`);
-    console.log(`📁 [DELETE PROJECT] Files to delete: ${project.files.length}`);
 
     // 2. Delete all files from R2
     let deletedFilesCount = 0;
@@ -318,7 +311,6 @@ export async function DELETE(
 
     for (const file of project.files) {
       try {
-        console.log(`   🗑️ Deleting from R2: ${file.fileKey}`);
 
         const deleteCommand = new DeleteObjectCommand({
           Bucket: R2_BUCKET,
@@ -328,7 +320,6 @@ export async function DELETE(
         await r2Client.send(deleteCommand);
         deletedFilesCount++;
 
-        console.log(`   ✅ Deleted: ${file.fileKey}`);
       } catch (error) {
         const errorMsg = `Failed to delete ${file.fileKey}: ${error instanceof Error ? error.message : "Unknown error"}`;
         console.error(`   ❌ ${errorMsg}`);
@@ -336,21 +327,15 @@ export async function DELETE(
       }
     }
 
-    console.log(
-      `📊 [DELETE PROJECT] R2 deletion complete: ${deletedFilesCount} files deleted, ${deleteErrors.length} errors`,
-    );
-
+    
     // 3. Delete project from database (cascades to files table)
-    console.log("💾 [DELETE PROJECT] Deleting project from database...");
 
     await prisma.project.delete({
       where: { id },
     });
 
-    console.log("✅ [DELETE PROJECT] Project deleted from database");
 
     // 4. Create audit log
-    console.log("📝 [DELETE PROJECT] Creating audit log...");
 
     await prisma.auditLog.create({
       data: {
@@ -371,7 +356,6 @@ export async function DELETE(
       },
     });
 
-    console.log("✅ [DELETE PROJECT] Audit log created");
 
     const summary = {
       success: true,
@@ -380,8 +364,6 @@ export async function DELETE(
       errors: deleteErrors,
     };
 
-    console.log("🎉 [DELETE PROJECT] Project deletion completed successfully");
-    console.log(`📊 [DELETE PROJECT] Summary:`, summary);
 
     return NextResponse.json(summary);
   } catch (error) {

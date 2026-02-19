@@ -44,7 +44,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<NextAuthUser | null> {
-        console.log("🔐 [AUTH] Login attempt for:", credentials?.email);
 
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email e senha são obrigatórios");
@@ -56,19 +55,16 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          console.log("❌ [AUTH] User not found");
           throw new Error("Email ou senha incorretos");
         }
 
         // Check if user is active
         if (user.status !== "ACTIVE") {
-          console.log("❌ [AUTH] User not active:", user.status);
           throw new Error("Conta não ativada. Verifique seu email de convite.");
         }
 
         // Check if password exists
         if (!user.password) {
-          console.log("❌ [AUTH] No password set");
           throw new Error("Senha não configurada. Use o link de convite.");
         }
 
@@ -79,11 +75,9 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
-          console.log("❌ [AUTH] Invalid password");
           throw new Error("Email ou senha incorretos");
         }
 
-        console.log("✅ [AUTH] Login successful");
 
         // Update last login
         await prisma.user.update({

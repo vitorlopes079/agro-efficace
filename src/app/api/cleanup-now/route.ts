@@ -21,7 +21,6 @@ export async function GET() {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    console.log("🧹 Starting cleanup...");
 
     // Listar todos uploads incompletos
     const listCommand = new ListMultipartUploadsCommand({
@@ -37,7 +36,6 @@ export async function GET() {
       });
     }
 
-    console.log(`Found ${Uploads.length} incomplete uploads`);
 
     let aborted = 0;
 
@@ -52,7 +50,6 @@ export async function GET() {
 
         await r2Client.send(abortCommand);
         aborted++;
-        console.log(`✅ Aborted: ${upload.Key}`);
       } catch (error) {
         console.error(`❌ Failed to abort ${upload.Key}:`, error);
       }
