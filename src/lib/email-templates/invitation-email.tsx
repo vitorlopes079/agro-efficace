@@ -122,7 +122,7 @@ export function InvitationEmailTemplate({
       <body>
         <div class="email-wrapper">
           <div class="header">
-            <div class="logo">🌱</div>
+            <img src="https://www.agroefficace.com.br/logo-preto.png" alt="AgroEfficace" width="150" style="margin-bottom: 16px;" />
             <h1>Bem-vindo ao AgroEfficace</h1>
           </div>
           
