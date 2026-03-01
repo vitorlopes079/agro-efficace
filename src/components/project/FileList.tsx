@@ -18,7 +18,7 @@ interface FileListProps {
   defaultOpen?: boolean;
 }
 
-export function FileList({ files, projectId, icon, title, emptyMessage, defaultOpen = true }: FileListProps) {
+export function FileList({ files, projectId, icon, title, emptyMessage, defaultOpen = false }: FileListProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const handleDownload = (fileId: string) => {
