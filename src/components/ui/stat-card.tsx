@@ -85,7 +85,7 @@ export function StatCard({
         {action && (
           <button
             onClick={action.onClick}
-            className="text-xs font-medium text-green-400 transition-colors hover:text-green-300"
+            className="cursor-pointer text-xs font-medium text-green-400 transition-colors hover:text-green-300"
           >
             {action.label} →
           </button>

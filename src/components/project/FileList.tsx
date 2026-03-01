@@ -54,7 +54,7 @@ export function FileList({ files, projectId, icon, title, emptyMessage }: FileLi
                 </div>
                 <button
                   onClick={() => handleDownload(file.id)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-800 p-2 text-xs font-medium text-white transition-all hover:bg-zinc-700 sm:px-3 sm:py-1.5"
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg bg-zinc-800 p-2 text-xs font-medium text-white transition-all hover:bg-zinc-700 sm:px-3 sm:py-1.5"
                   title="Download"
                 >
                   <ArrowDown className="h-4 w-4" />

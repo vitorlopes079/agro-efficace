@@ -193,7 +193,7 @@ export default function ProjectsSection({
                 e.stopPropagation();
                 router.push(`/projects/${project.id}`);
               }}
-              className="rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-medium text-white transition-all hover:bg-zinc-700"
+              className="cursor-pointer rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-medium text-white transition-all hover:bg-zinc-700"
             >
               Abrir
             </button>

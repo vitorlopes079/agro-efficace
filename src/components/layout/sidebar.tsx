@@ -50,7 +50,7 @@ export function Sidebar({ items }: SidebarProps) {
       {/* Mobile Menu Button - Fixed at bottom left */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/25 transition-all hover:bg-green-600 lg:hidden"
+        className="fixed bottom-4 left-4 z-50 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/25 transition-all hover:bg-green-600 lg:hidden"
         aria-label={isOpen ? "Fechar menu" : "Abrir menu"}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -59,7 +59,7 @@ export function Sidebar({ items }: SidebarProps) {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 cursor-pointer bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

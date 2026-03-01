@@ -58,7 +58,7 @@ export function FileUploadItem({
           type="button"
           onClick={() => onRemove(file.id)}
           disabled={disabled || file.uploadStatus === "uploading"}
-          className="flex-shrink-0 rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-shrink-0 cursor-pointer rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <X className="h-4 w-4" />
         </button>

@@ -30,7 +30,7 @@ export function UserNotesCard({
           {!isEditing && (
             <button
               onClick={onStartEdit}
-              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+              className="cursor-pointer flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
             >
               <Edit2 className="h-3.5 w-3.5" />
               Editar
@@ -52,7 +52,7 @@ export function UserNotesCard({
               <button
                 onClick={onCancelEdit}
                 disabled={isLoading}
-                className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <X className="h-3.5 w-3.5" />
                 Cancelar
@@ -60,7 +60,7 @@ export function UserNotesCard({
               <button
                 onClick={onSave}
                 disabled={isLoading}
-                className="flex items-center gap-2 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer flex items-center gap-2 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isLoading ? "Salvando..." : "Salvar"}

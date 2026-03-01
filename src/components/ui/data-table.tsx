@@ -73,7 +73,7 @@ export function DataTable<T>({
           <button
             onClick={() => pagination.onPageChange(pagination.page - 1)}
             disabled={pagination.page <= 1}
-            className="rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+            className="cursor-pointer rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
           >
             Anterior
           </button>
@@ -91,7 +91,7 @@ export function DataTable<T>({
                   <button
                     key={pageNum}
                     onClick={() => pagination.onPageChange(pageNum as number)}
-                    className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors ${
+                    className={`h-8 w-8 cursor-pointer rounded-lg text-xs font-medium transition-colors ${
                       pagination.page === pageNum
                         ? "bg-emerald-600 text-white"
                         : "border border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-white"
@@ -108,7 +108,7 @@ export function DataTable<T>({
           <button
             onClick={() => pagination.onPageChange(pagination.page + 1)}
             disabled={pagination.page >= pagination.totalPages}
-            className="rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+            className="cursor-pointer rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
           >
             Próximo
           </button>

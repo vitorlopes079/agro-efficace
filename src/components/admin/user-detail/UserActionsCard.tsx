@@ -26,7 +26,7 @@ export function UserActionsCard({
         <button
           onClick={onToggleUploadClick}
           disabled={isLoading || isSuspended}
-          className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             canUpload
               ? "border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
               : "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
@@ -53,7 +53,7 @@ export function UserActionsCard({
         <button
           onClick={onBanClick}
           disabled={isLoading}
-          className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             isSuspended
               ? "border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
               : "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"

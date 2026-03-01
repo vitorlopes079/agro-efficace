@@ -53,7 +53,7 @@ export default function StatusTabs({
       <div className="mb-6 md:hidden">
         <button
           onClick={() => setIsSheetOpen(true)}
-          className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+          className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 px-4 py-3 transition-colors hover:border-zinc-700 hover:bg-zinc-900"
         >
           <div className="flex items-center gap-3">
             <Filter className="h-5 w-5 text-zinc-400" />
@@ -81,7 +81,7 @@ export default function StatusTabs({
               <button
                 key={tab.value}
                 onClick={() => handleMobileSelect(tab.value)}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3.5 transition-colors ${
+                className={`flex w-full cursor-pointer items-center justify-between rounded-xl px-4 py-3.5 transition-colors ${
                   isActive
                     ? "bg-green-500/10 text-white"
                     : "text-zinc-300 hover:bg-zinc-800"
@@ -117,7 +117,7 @@ export default function StatusTabs({
               <button
                 key={tab.value}
                 onClick={() => onTabChange(tab.value)}
-                className={`relative px-4 py-3 text-sm font-medium transition-colors ${
+                className={`relative cursor-pointer px-4 py-3 text-sm font-medium transition-colors ${
                   isActive ? "text-white" : "text-zinc-400 hover:text-zinc-300"
                 }`}
               >

@@ -154,7 +154,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       </div>
       <button
         onClick={onClose}
-        className="flex-shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors"
+        className="flex-shrink-0 cursor-pointer rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-white transition-colors"
       >
         <X className="h-4 w-4" />
       </button>

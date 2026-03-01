@@ -27,7 +27,7 @@ export function ProjectInputFilesSection({
           {hasInputFiles && (
             <button
               onClick={onDownloadInputZip}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
             >
               <ArrowDown className="h-4 w-4" />
               <span className="sm:hidden">Cliente</span>
@@ -37,7 +37,7 @@ export function ProjectInputFilesSection({
           {project.status === "COMPLETED" && hasOutputFiles && (
             <button
               onClick={onDownloadOutputZip}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
             >
               <ArrowDown className="h-4 w-4" />
               <span className="sm:hidden">Solução</span>

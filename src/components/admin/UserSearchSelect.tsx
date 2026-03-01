@@ -109,7 +109,7 @@ export function UserSearchSelect({
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-white transition-colors"
+                className="cursor-pointer rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-white transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -154,7 +154,7 @@ export function UserSearchSelect({
                     key={user.id}
                     type="button"
                     onClick={() => handleSelect(user)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-700 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                    className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left hover:bg-zinc-700 transition-colors first:rounded-t-lg last:rounded-b-lg"
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-600">
                       <User className="h-4 w-4 text-zinc-300" />

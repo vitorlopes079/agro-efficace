@@ -15,7 +15,7 @@ export function InfoTooltip({ text }: InfoTooltipProps) {
       {/* Changed from div */}
       <button
         type="button"
-        className="ml-2 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-700 text-[10px] font-semibold text-zinc-300 transition-colors hover:bg-zinc-600 hover:text-white"
+        className="ml-2 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-zinc-700 text-[10px] font-semibold text-zinc-300 transition-colors hover:bg-zinc-600 hover:text-white"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
         onFocus={() => setIsVisible(true)}

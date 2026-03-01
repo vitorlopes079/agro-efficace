@@ -41,7 +41,7 @@ export function BottomSheet({
     <div className="fixed inset-0 z-50 md:hidden">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 cursor-pointer bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -59,7 +59,7 @@ export function BottomSheet({
               <h3 className="text-base font-semibold text-white sm:text-lg">{title}</h3>
               <button
                 onClick={onClose}
-                className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+                className="cursor-pointer rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>

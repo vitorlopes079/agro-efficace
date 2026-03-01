@@ -257,7 +257,7 @@ export default function AdminProjectsTable({
           {activeTab !== "all" && (
             <button
               onClick={() => setActiveTab("all")}
-              className="mt-2 text-sm text-green-400 hover:text-green-300"
+              className="mt-2 cursor-pointer text-sm text-green-400 hover:text-green-300"
             >
               Ver todos os projetos
             </button>

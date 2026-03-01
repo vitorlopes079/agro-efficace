@@ -76,7 +76,7 @@ export function BalanceDetailsModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-50 cursor-pointer bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -92,7 +92,7 @@ export function BalanceDetailsModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+            className="cursor-pointer rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
@@ -133,7 +133,7 @@ export function BalanceDetailsModal({
                               // Navigate to project details
                               window.location.href = `/projects/${project.id}`;
                             }}
-                            className="text-base font-medium text-white transition-colors hover:text-green-400"
+                            className="cursor-pointer text-base font-medium text-white transition-colors hover:text-green-400"
                           >
                             {project.name}
                           </button>
@@ -166,7 +166,7 @@ export function BalanceDetailsModal({
                           onClick={() => {
                             window.location.href = `/projects/${project.id}`;
                           }}
-                          className="mt-1 text-xs text-green-400 opacity-0 transition-opacity group-hover:opacity-100"
+                          className="mt-1 cursor-pointer text-xs text-green-400 opacity-0 transition-opacity group-hover:opacity-100"
                         >
                           Ver detalhes →
                         </button>

@@ -35,7 +35,7 @@ export function UserMenu({ user }: UserMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 md:px-3 md:py-2 transition-colors hover:bg-zinc-800/50"
+        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 md:px-3 md:py-2 transition-colors hover:bg-zinc-800/50"
       >
         <div className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full bg-linear-to-br from-zinc-600 to-zinc-700 text-xs md:text-sm font-semibold text-white">
           {user.initials}
@@ -61,7 +61,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <div className="py-1">
             <Link
               href="/change-password"
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
+              className="flex w-full cursor-pointer items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               <KeyRound className="h-4 w-4" />
@@ -69,7 +69,7 @@ export function UserMenu({ user }: UserMenuProps) {
             </Link>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
+              className="flex w-full cursor-pointer items-center gap-3 px-4 py-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800/50 hover:text-white"
             >
               <LogOut className="h-4 w-4" />
               Sair
