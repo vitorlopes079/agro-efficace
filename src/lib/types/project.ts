@@ -36,5 +36,4 @@ export interface ProjectData {
     fotos: FileData[];
     outros: FileData[];
   };
-  totalFiles: number;
 }

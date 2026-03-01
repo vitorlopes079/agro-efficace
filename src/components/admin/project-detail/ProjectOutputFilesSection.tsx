@@ -71,21 +71,39 @@ export function ProjectOutputFilesSection({
 
   if (visibleGroups.length === 0) return null;
 
+  // Split into two columns
+  const leftColumn = visibleGroups.filter((_, i) => i % 2 === 0);
+  const rightColumn = visibleGroups.filter((_, i) => i % 2 === 1);
+
   return (
     <div className="mt-8 space-y-6">
       <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Saída</h2>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {visibleGroups.map((group) => (
-          <FileList
-            key={group.title}
-            files={group.files}
-            projectId={projectId}
-            icon={group.icon}
-            title={group.title}
-            emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
-          />
-        ))}
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="flex-1 space-y-6">
+          {leftColumn.map((group) => (
+            <FileList
+              key={group.title}
+              files={group.files}
+              projectId={projectId}
+              icon={group.icon}
+              title={group.title}
+              emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+            />
+          ))}
+        </div>
+        <div className="flex-1 space-y-6">
+          {rightColumn.map((group) => (
+            <FileList
+              key={group.title}
+              files={group.files}
+              projectId={projectId}
+              icon={group.icon}
+              title={group.title}
+              emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

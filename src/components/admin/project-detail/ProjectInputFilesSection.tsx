@@ -47,22 +47,25 @@ export function ProjectInputFilesSection({
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <FileList
-          files={project.filesGrouped.ortomosaico}
-          projectId={project.id}
-          icon={<MapIcon />}
-          title="Ortomosaicos"
-          emptyMessage="Nenhum ortomosaico enviado"
-        />
-
-        <FileList
-          files={project.filesGrouped.perimetros}
-          projectId={project.id}
-          icon={<PolygonIcon />}
-          title="Perímetros de Análise"
-          emptyMessage="Nenhum perímetro enviado"
-        />
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="flex-1">
+          <FileList
+            files={project.filesGrouped.ortomosaico}
+            projectId={project.id}
+            icon={<MapIcon />}
+            title="Ortomosaicos"
+            emptyMessage="Nenhum ortomosaico enviado"
+          />
+        </div>
+        <div className="flex-1">
+          <FileList
+            files={project.filesGrouped.perimetros}
+            projectId={project.id}
+            icon={<PolygonIcon />}
+            title="Perímetros de Análise"
+            emptyMessage="Nenhum perímetro enviado"
+          />
+        </div>
       </div>
 
       {project.filesGrouped.fotos.length > 0 && (

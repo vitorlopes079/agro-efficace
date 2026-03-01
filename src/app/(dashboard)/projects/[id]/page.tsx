@@ -155,7 +155,7 @@ export default function ProjectDetailPage() {
             {inputFiles.length > 0 && (
               <button
                 onClick={handleDownloadInputZip}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
               >
                 <ArrowDown className="h-4 w-4" />
                 <span className="sm:hidden">Cliente</span>
@@ -165,7 +165,7 @@ export default function ProjectDetailPage() {
             {project.status === "COMPLETED" && outputFiles.length > 0 && (
               <button
                 onClick={handleDownloadOutputZip}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-2.5 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white sm:gap-2 sm:px-4"
               >
                 <ArrowDown className="h-4 w-4" />
                 <span className="sm:hidden">Solução</span>
@@ -175,22 +175,25 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <FileList
-            files={project.filesGrouped.ortomosaico}
-            projectId={project.id}
-            icon={<MapIcon />}
-            title="Ortomosaicos"
-            emptyMessage="Nenhum ortomosaico enviado"
-          />
-
-          <FileList
-            files={project.filesGrouped.perimetros}
-            projectId={project.id}
-            icon={<PolygonIcon />}
-            title="Perímetros de Análise"
-            emptyMessage="Nenhum perímetro enviado"
-          />
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="flex-1">
+            <FileList
+              files={project.filesGrouped.ortomosaico}
+              projectId={project.id}
+              icon={<MapIcon />}
+              title="Ortomosaicos"
+              emptyMessage="Nenhum ortomosaico enviado"
+            />
+          </div>
+          <div className="flex-1">
+            <FileList
+              files={project.filesGrouped.perimetros}
+              projectId={project.id}
+              icon={<PolygonIcon />}
+              title="Perímetros de Análise"
+              emptyMessage="Nenhum perímetro enviado"
+            />
+          </div>
         </div>
 
         {project.filesGrouped.outros.length > 0 && (
@@ -205,83 +208,53 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Output Files Section */}
-      {project.status === "COMPLETED" && outputFiles.length > 0 && (
-        <div className="mt-8 space-y-6">
-          <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Saída</h2>
+      {project.status === "COMPLETED" && outputFiles.length > 0 && (() => {
+        const outputGroups = [
+          { files: outputDJI, title: "DJI Shapefile", icon: <File className="h-5 w-5 text-zinc-400" /> },
+          { files: outputOrtomosaic, title: "Ortomosaico Processado", icon: <MapIcon /> },
+          { files: outputRelatorio, title: "Relatórios", icon: <File className="h-5 w-5 text-zinc-400" /> },
+          { files: outputDaninhas, title: "Shapefile - Daninhas", icon: <PolygonIcon /> },
+          { files: outputObstaculos, title: "Shapefile - Obstáculos", icon: <PolygonIcon /> },
+          { files: outputPerimetros, title: "Shapefile - Perímetros", icon: <PolygonIcon /> },
+          { files: outputOutros, title: "Outros Arquivos", icon: <File className="h-5 w-5 text-zinc-400" /> },
+        ].filter(g => g.files.length > 0);
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {outputDJI.length > 0 && (
-              <FileList
-                files={outputDJI}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="DJI Shapefile"
-                emptyMessage="Nenhum arquivo DJI"
-              />
-            )}
+        const leftColumn = outputGroups.filter((_, i) => i % 2 === 0);
+        const rightColumn = outputGroups.filter((_, i) => i % 2 === 1);
 
-            {outputOrtomosaic.length > 0 && (
-              <FileList
-                files={outputOrtomosaic}
-                projectId={project.id}
-                icon={<MapIcon />}
-                title="Ortomosaico Processado"
-                emptyMessage="Nenhum ortomosaico processado"
-              />
-            )}
+        return (
+          <div className="mt-8 space-y-6">
+            <h2 className="text-base font-semibold text-white sm:text-lg">Arquivos de Saída</h2>
 
-            {outputRelatorio.length > 0 && (
-              <FileList
-                files={outputRelatorio}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="Relatórios"
-                emptyMessage="Nenhum relatório"
-              />
-            )}
-
-            {outputDaninhas.length > 0 && (
-              <FileList
-                files={outputDaninhas}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Daninhas"
-                emptyMessage="Nenhum shapefile de daninhas"
-              />
-            )}
-
-            {outputObstaculos.length > 0 && (
-              <FileList
-                files={outputObstaculos}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Obstáculos"
-                emptyMessage="Nenhum shapefile de obstáculos"
-              />
-            )}
-
-            {outputPerimetros.length > 0 && (
-              <FileList
-                files={outputPerimetros}
-                projectId={project.id}
-                icon={<PolygonIcon />}
-                title="Shapefile - Perímetros"
-                emptyMessage="Nenhum shapefile de perímetros"
-              />
-            )}
-
-            {outputOutros.length > 0 && (
-              <FileList
-                files={outputOutros}
-                projectId={project.id}
-                icon={<File className="h-5 w-5 text-zinc-400" />}
-                title="Outros Arquivos"
-                emptyMessage="Nenhum arquivo adicional"
-              />
-            )}
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="flex-1 space-y-6">
+                {leftColumn.map((group) => (
+                  <FileList
+                    key={group.title}
+                    files={group.files}
+                    projectId={project.id}
+                    icon={group.icon}
+                    title={group.title}
+                    emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+                  />
+                ))}
+              </div>
+              <div className="flex-1 space-y-6">
+                {rightColumn.map((group) => (
+                  <FileList
+                    key={group.title}
+                    files={group.files}
+                    projectId={project.id}
+                    icon={group.icon}
+                    title={group.title}
+                    emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </main>
   );
 }

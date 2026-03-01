@@ -131,7 +131,6 @@ export async function GET(
             uploadedAt: file.uploadedAt.toISOString(),
           })),
         },
-        totalFiles: project.files.length,
       },
     });
   } catch (error) {

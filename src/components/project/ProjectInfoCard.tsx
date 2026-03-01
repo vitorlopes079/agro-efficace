@@ -58,12 +58,6 @@ export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInf
               <StatusBadge label={statusInfo.label} variant={statusInfo.variant} />
             </div>
           </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-              Total de Arquivos
-            </p>
-            <p className="mt-1 text-sm text-white">{project.totalFiles}</p>
-          </div>
           {project.completedAt && (
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
