@@ -65,7 +65,7 @@ export async function GET(
       project: {
         id: project.id,
         name: project.name,
-        projectType: project.projectType,
+        projectTypes: (project as any).projectTypes || [], // Changed to array
         culture: project.culture,
         status: project.status,
         notes: project.notes,
@@ -88,6 +88,7 @@ export async function GET(
           fileType: file.fileType,
           fileKey: file.fileKey,
           fileCategory: file.fileCategory,
+          isInput: file.isInput,
           uploadedAt: file.uploadedAt.toISOString(),
         })),
         filesGrouped: {

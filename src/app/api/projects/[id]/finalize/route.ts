@@ -77,24 +77,15 @@ export async function POST(
       );
     }
 
-    // Validate all categories are OUTPUT categories
-    const validOutputCategories = [
-      "OUTPUT_DJI_SHAPEFILE",
-      "OUTPUT_ORTOMOSAIC",
-      "OUTPUT_RELATORIO",
-      "OUTPUT_SHAPEFILE_DANINHAS",
-      "OUTPUT_SHAPEFILE_OBSTACULOS",
-      "OUTPUT_SHAPEFILE_PERIMETROS",
-      "OUTPUT_OTHER",
-    ];
-
-    const invalidCategories = files.filter(
-      (f) => !validOutputCategories.includes(f.category),
+    // Validate all files have a category (section title)
+    const filesWithoutCategory = files.filter(
+      (f: { pendingUploadId: string; category: string }) =>
+        !f.category || typeof f.category !== "string" || !f.category.trim()
     );
 
-    if (invalidCategories.length > 0) {
+    if (filesWithoutCategory.length > 0) {
       return NextResponse.json(
-        { error: "Categorias de arquivo inválidas" },
+        { error: "Todos os arquivos precisam ter uma categoria (nome da seção)" },
         { status: 400 },
       );
     }

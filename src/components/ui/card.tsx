@@ -33,7 +33,7 @@ interface CardFooterProps {
 export function Card({ children, className = "" }: CardProps) {
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 ${className}`}
+      className={`rounded-xl border border-zinc-800 bg-zinc-900/50 ${className}`}
     >
       {children}
     </div>

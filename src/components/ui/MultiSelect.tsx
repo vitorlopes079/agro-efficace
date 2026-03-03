@@ -1,36 +1,34 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 
 interface SelectOption {
   value: string;
   label: string;
 }
 
-interface SelectProps {
+interface MultiSelectProps {
   label?: string;
   error?: string;
   options: SelectOption[];
+  value: string[];
+  onChange: (values: string[]) => void;
   placeholder?: string;
-  value?: string;
-  onChange?: (e: { target: { name: string; value: string } }) => void;
-  name?: string;
   required?: boolean;
   disabled?: boolean;
 }
 
-export function Select({
+export function MultiSelect({
   label,
   error,
   options,
-  placeholder = "Selecione...",
   value,
   onChange,
-  name = "",
+  placeholder = "Selecione...",
   required,
   disabled = false,
-}: SelectProps) {
+}: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -46,14 +44,23 @@ export function Select({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (optionValue: string) => {
-    if (onChange) {
-      onChange({ target: { name, value: optionValue } });
+  const toggleOption = (optionValue: string) => {
+    if (value.includes(optionValue)) {
+      onChange(value.filter((v) => v !== optionValue));
+    } else {
+      onChange([...value, optionValue]);
     }
-    setIsOpen(false);
   };
 
-  const selectedOption = options.find((o) => o.value === value);
+  const removeValue = (optionValue: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange(value.filter((v) => v !== optionValue));
+  };
+
+  const getLabel = (optionValue: string) => {
+    const option = options.find((o) => o.value === optionValue);
+    return option?.label || optionValue;
+  };
 
   return (
     <div className="space-y-2" ref={containerRef}>
@@ -79,9 +86,35 @@ export function Select({
           `}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className={selectedOption ? "text-white" : "text-zinc-500"}>
-              {selectedOption ? selectedOption.label : placeholder}
-            </span>
+            <div className="flex flex-wrap gap-1.5 flex-1 min-h-[24px]">
+              {value.length > 0 ? (
+                value.map((v) => (
+                  <span
+                    key={v}
+                    className="inline-flex items-center gap-1 rounded bg-green-500/20 px-2 py-0.5 text-xs text-green-400"
+                  >
+                    {getLabel(v)}
+                    {!disabled && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => removeValue(v, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            removeValue(v, e as unknown as React.MouseEvent);
+                          }
+                        }}
+                        className="hover:text-green-200 cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </span>
+                    )}
+                  </span>
+                ))
+              ) : (
+                <span className="text-zinc-500">{placeholder}</span>
+              )}
+            </div>
             <ChevronDown
               className={`h-4 w-4 text-zinc-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
             />
@@ -97,20 +130,29 @@ export function Select({
                 </div>
               ) : (
                 options.map((option) => {
-                  const isSelected = value === option.value;
+                  const isSelected = value.includes(option.value);
                   return (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => handleSelect(option.value)}
+                      onClick={() => toggleOption(option.value)}
                       className={`
-                        w-full px-4 py-2 text-left text-sm transition-colors
-                        ${isSelected
-                          ? "bg-green-500/20 text-green-400"
-                          : "text-zinc-300 hover:bg-zinc-800"
-                        }
+                        flex w-full items-center gap-2 px-4 py-2 text-left text-sm
+                        transition-colors hover:bg-zinc-800
+                        ${isSelected ? "text-green-400" : "text-zinc-300"}
                       `}
                     >
+                      <div
+                        className={`
+                          flex h-4 w-4 items-center justify-center rounded border
+                          ${isSelected
+                            ? "border-green-500 bg-green-500"
+                            : "border-zinc-600 bg-transparent"
+                          }
+                        `}
+                      >
+                        {isSelected && <Check className="h-3 w-3 text-white" />}
+                      </div>
                       {option.label}
                     </button>
                   );

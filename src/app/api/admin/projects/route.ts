@@ -53,32 +53,11 @@ export async function GET(req: NextRequest) {
         { name: { contains: searchTerm, mode: "insensitive" } },
         { user: { name: { contains: searchTerm, mode: "insensitive" } } },
         { user: { email: { contains: searchTerm, mode: "insensitive" } } },
+        // Search in culture (now a string field)
+        { culture: { contains: searchTerm, mode: "insensitive" } },
+        // Search in projectTypes array
+        { projectTypes: { has: searchTerm.toUpperCase() } },
       ];
-
-      // Check if search matches any Culture enum value
-      const cultures = [
-        "CANA",
-        "MILHO",
-        "SOJA",
-        "EUCALIPTO",
-        "CAFE",
-        "ALGODAO",
-      ];
-      const matchingCulture = cultures.find((c) =>
-        c.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-      if (matchingCulture) {
-        where.OR.push({ culture: matchingCulture });
-      }
-
-      // Check if search matches any ProjectType enum value
-      const projectTypes = ["DANINHAS", "FALHAS", "RESTITUICAO", "MAPEAMENTO"];
-      const matchingProjectType = projectTypes.find((pt) =>
-        pt.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-      if (matchingProjectType) {
-        where.OR.push({ projectType: matchingProjectType });
-      }
     }
 
 
@@ -91,7 +70,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         name: true,
-        projectType: true,
+        projectTypes: true, // Changed to array
         culture: true,
         status: true,
         notes: true,
@@ -157,7 +136,7 @@ export async function GET(req: NextRequest) {
     const formattedProjects = projects.map((project) => ({
       id: project.id,
       name: project.name,
-      projectType: project.projectType,
+      projectTypes: (project as any).projectTypes || [], // Changed to array
       culture: project.culture,
       status: project.status,
       notes: project.notes,

@@ -70,7 +70,7 @@ export async function GET(
       project: {
         id: project.id,
         name: project.name,
-        projectType: project.projectType,
+        projectTypes: (project as any).projectTypes || [], // Changed to array
         culture: project.culture,
         status: project.status,
         notes: project.notes,
@@ -95,6 +95,7 @@ export async function GET(
           fileType: file.fileType,
           fileKey: file.fileKey,
           fileCategory: file.fileCategory,
+          isInput: file.isInput,
           uploadedAt: file.uploadedAt.toISOString(),
         })),
         filesGrouped: {
@@ -344,7 +345,7 @@ export async function DELETE(
         userId: session.user.id,
         metadata: {
           projectName: project.name,
-          projectType: project.projectType,
+          projectTypes: (project as any).projectTypes || [],
           culture: project.culture,
           filesCount: project.files.length,
           deletedFilesCount,

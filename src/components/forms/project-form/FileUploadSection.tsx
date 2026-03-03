@@ -8,6 +8,7 @@ interface FileUploadSectionProps {
   required?: boolean;
   description: string;
   fileTypes: string;
+  accept?: string; // File type filter for the input
   files: FileItem[];
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: (fileId: string) => void;
@@ -20,6 +21,7 @@ export function FileUploadSection({
   required = false,
   description,
   fileTypes,
+  accept,
   files,
   onFileChange,
   onRemoveFile,
@@ -46,6 +48,7 @@ export function FileUploadSection({
           <input
             type="file"
             multiple
+            accept={accept}
             onChange={onFileChange}
             className="hidden"
             disabled={disabled}

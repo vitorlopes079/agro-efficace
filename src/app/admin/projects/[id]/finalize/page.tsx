@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Plus } from "lucide-react";
 import {
   Button,
   Card,
@@ -12,10 +12,8 @@ import {
   useToast,
   FinalizingProjectOverlay,
 } from "@/components/ui";
-import { useFinalizeProjectUploads } from "@/hooks/useFinalizeProjectUploads";
-import { finalizeUploadSections } from "@/lib/config/finalize-upload-sections";
-import { FinalizeUploadSection } from "@/components/admin/finalize";
-import type { UploadSectionId } from "@/hooks/useFinalizeProjectUploads";
+import { useDynamicFinalizeUploads } from "@/hooks/useDynamicFinalizeUploads";
+import { DynamicUploadSection } from "@/components/admin/finalize/DynamicUploadSection";
 
 export default function FinalizeProjectPage() {
   const params = useParams();
@@ -24,15 +22,30 @@ export default function FinalizeProjectPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [projectName, setProjectName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadState, setUploadState] = useState({
+    isAnyUploading: false,
+    hasAnyErrors: false,
+    totalCompletedFiles: 0,
+  });
 
-  // Manage all upload sections
   const {
-    getUploadHook,
-    isAnyUploading,
-    hasAnyErrors,
-    totalCompletedFiles,
+    sections,
+    addSection,
+    removeSection,
+    updateSectionTitle,
+    registerSectionFiles,
     getAllCompletedFiles,
-  } = useFinalizeProjectUploads();
+    getUploadingState,
+    validateSections,
+  } = useDynamicFinalizeUploads();
+
+  // Update upload state periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUploadState(getUploadingState());
+    }, 500);
+    return () => clearInterval(interval);
+  }, [getUploadingState]);
 
   useEffect(() => {
     if (params.id) {
@@ -61,40 +74,43 @@ export default function FinalizeProjectPage() {
     }
   };
 
-  const handleFileChange = async (
-    sectionId: UploadSectionId,
-    files: FileList | null,
-  ) => {
-    if (!files) return;
-    const hook = getUploadHook(sectionId);
-    await hook.addFiles(files);
-  };
-
-  const handleRemoveFile = (sectionId: UploadSectionId, fileId: string) => {
-    const hook = getUploadHook(sectionId);
-    hook.removeFile(fileId);
-  };
+  const handleFilesChange = useCallback(
+    (sectionId: string, files: import("@/hooks/useFileUpload").FileItem[]) => {
+      registerSectionFiles(sectionId, files);
+    },
+    [registerSectionFiles]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Collect all completed files from all sections
+    // Validate sections have titles
+    const validation = validateSections();
+    if (!validation.isValid) {
+      toast.error(
+        "Seções sem nome",
+        "Todas as seções com arquivos precisam ter um nome"
+      );
+      return;
+    }
+
+    // Collect all completed files
     const allFiles = getAllCompletedFiles();
 
     // Validate at least one file
     if (allFiles.length === 0) {
       toast.error(
         "Nenhum arquivo enviado",
-        "Adicione pelo menos um arquivo para finalizar o projeto",
+        "Adicione pelo menos um arquivo para finalizar o projeto"
       );
       return;
     }
 
     // Check if any uploads are still in progress
-    if (isAnyUploading) {
+    if (uploadState.isAnyUploading) {
       toast.error(
         "Upload em andamento",
-        "Aguarde todos os arquivos terminarem de fazer upload",
+        "Aguarde todos os arquivos terminarem de fazer upload"
       );
       return;
     }
@@ -122,7 +138,7 @@ export default function FinalizeProjectPage() {
 
       toast.success(
         "Projeto finalizado!",
-        `${allFiles.length} arquivo(s) processado(s) com sucesso`,
+        `${allFiles.length} arquivo(s) processado(s) com sucesso`
       );
       router.push(`/admin/projects/${params.id}`);
     } catch (error) {
@@ -162,29 +178,37 @@ export default function FinalizeProjectPage() {
           </div>
           <p className="mt-4 text-xs text-zinc-400 sm:text-sm">
             Faça upload dos arquivos processados para entregar ao cliente. Os
-            arquivos serão organizados e disponibilizados para download.
+            arquivos serão organizados pelo nome das seções que você definir.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Upload Sections */}
-          {finalizeUploadSections.map((section) => {
-            const hook = getUploadHook(section.id as UploadSectionId);
-            return (
-              <FinalizeUploadSection
-                key={section.id}
-                section={section}
-                files={hook.files}
-                onFileChange={(files) =>
-                  handleFileChange(section.id as UploadSectionId, files)
-                }
-                onRemoveFile={(fileId) =>
-                  handleRemoveFile(section.id as UploadSectionId, fileId)
-                }
-                disabled={isSubmitting}
-              />
-            );
-          })}
+          {/* Dynamic Upload Sections */}
+          {sections.map((section) => (
+            <DynamicUploadSection
+              key={section.id}
+              sectionId={section.id}
+              title={section.title}
+              onTitleChange={(title) => updateSectionTitle(section.id, title)}
+              onRemove={() => removeSection(section.id)}
+              onFilesChange={handleFilesChange}
+              canRemove={sections.length > 1}
+              disabled={isSubmitting}
+            />
+          ))}
+
+          {/* Add Section Button */}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addSection}
+            disabled={isSubmitting}
+            fullWidth
+            className="border-2 border-dashed border-zinc-700 bg-transparent hover:border-zinc-600 hover:bg-zinc-800/50"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar Seção
+          </Button>
 
           {/* Summary */}
           <Card>
@@ -195,7 +219,7 @@ export default function FinalizeProjectPage() {
                     Total de arquivos
                   </p>
                   <p className="text-xs text-zinc-500">
-                    {totalCompletedFiles} arquivo(s) pronto(s) para envio
+                    {uploadState.totalCompletedFiles} arquivo(s) pronto(s) para envio
                   </p>
                 </div>
               </div>
@@ -208,7 +232,7 @@ export default function FinalizeProjectPage() {
               type="button"
               variant="secondary"
               onClick={() => router.push(`/admin/projects/${params.id}`)}
-              disabled={isSubmitting || isAnyUploading}
+              disabled={isSubmitting || uploadState.isAnyUploading}
               fullWidth
               className="sm:w-auto"
             >
@@ -216,13 +240,13 @@ export default function FinalizeProjectPage() {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || isAnyUploading || hasAnyErrors}
+              disabled={isSubmitting || uploadState.isAnyUploading || uploadState.hasAnyErrors}
               fullWidth
               className="sm:w-auto"
             >
               {isSubmitting
                 ? "Finalizando..."
-                : isAnyUploading
+                : uploadState.isAnyUploading
                   ? "Aguarde o upload..."
                   : "Finalizar e Enviar"}
             </Button>

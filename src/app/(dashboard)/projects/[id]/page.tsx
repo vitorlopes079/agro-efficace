@@ -76,18 +76,28 @@ export default function ProjectDetailPage() {
     variant: "gray" as const,
   };
 
-  // Filter and group files
-  const inputFiles = project.files.filter((f) => f.fileCategory.startsWith("INPUT_"));
-  const outputFiles = project.files.filter((f) => f.fileCategory.startsWith("OUTPUT_"));
+  // Filter files by input/output
+  const inputFiles = project.files.filter((f) => f.isInput);
+  const outputFiles = project.files.filter((f) => !f.isInput);
 
-  // Output file categories
-  const outputDJI = outputFiles.filter((f) => f.fileCategory === "OUTPUT_DJI_SHAPEFILE");
-  const outputOrtomosaic = outputFiles.filter((f) => f.fileCategory === "OUTPUT_ORTOMOSAIC");
-  const outputRelatorio = outputFiles.filter((f) => f.fileCategory === "OUTPUT_RELATORIO");
-  const outputDaninhas = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_DANINHAS");
-  const outputObstaculos = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_OBSTACULOS");
-  const outputPerimetros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_SHAPEFILE_PERIMETROS");
-  const outputOutros = outputFiles.filter((f) => f.fileCategory === "OUTPUT_OTHER");
+  // Group output files by their category (custom title)
+  const outputFileGroups = outputFiles.reduce(
+    (acc, file) => {
+      const category = file.fileCategory;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(file);
+      return acc;
+    },
+    {} as Record<string, typeof outputFiles>
+  );
+
+  // Convert to array for rendering
+  const outputGroupsArray = Object.entries(outputFileGroups).map(([title, files]) => ({
+    title,
+    files,
+  }));
 
   // ZIP download handlers
   const handleDownloadInputZip = () => {
@@ -177,13 +187,24 @@ export default function ProjectDetailPage() {
 
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex-1">
-            <FileList
-              files={project.filesGrouped.ortomosaico}
-              projectId={project.id}
-              icon={<MapIcon />}
-              title="Ortomosaicos"
-              emptyMessage="Nenhum ortomosaico enviado"
-            />
+            {/* Show Ortomosaico OR Fotos (mutually exclusive) */}
+            {project.filesGrouped.ortomosaico.length > 0 ? (
+              <FileList
+                files={project.filesGrouped.ortomosaico}
+                projectId={project.id}
+                icon={<MapIcon />}
+                title="Ortomosaicos"
+                emptyMessage="Nenhum ortomosaico enviado"
+              />
+            ) : (
+              <FileList
+                files={project.filesGrouped.fotos}
+                projectId={project.id}
+                icon={<File className="h-5 w-5 text-zinc-400" />}
+                title="Fotos do Drone"
+                emptyMessage="Nenhuma foto enviada"
+              />
+            )}
           </div>
           <div className="flex-1">
             <FileList
@@ -209,18 +230,8 @@ export default function ProjectDetailPage() {
 
       {/* Output Files Section */}
       {project.status === "COMPLETED" && outputFiles.length > 0 && (() => {
-        const outputGroups = [
-          { files: outputDJI, title: "DJI Shapefile", icon: <File className="h-5 w-5 text-zinc-400" /> },
-          { files: outputOrtomosaic, title: "Ortomosaico Processado", icon: <MapIcon /> },
-          { files: outputRelatorio, title: "Relatórios", icon: <File className="h-5 w-5 text-zinc-400" /> },
-          { files: outputDaninhas, title: "Shapefile - Daninhas", icon: <PolygonIcon /> },
-          { files: outputObstaculos, title: "Shapefile - Obstáculos", icon: <PolygonIcon /> },
-          { files: outputPerimetros, title: "Shapefile - Perímetros", icon: <PolygonIcon /> },
-          { files: outputOutros, title: "Outros Arquivos", icon: <File className="h-5 w-5 text-zinc-400" /> },
-        ].filter(g => g.files.length > 0);
-
-        const leftColumn = outputGroups.filter((_, i) => i % 2 === 0);
-        const rightColumn = outputGroups.filter((_, i) => i % 2 === 1);
+        const leftColumn = outputGroupsArray.filter((_, i) => i % 2 === 0);
+        const rightColumn = outputGroupsArray.filter((_, i) => i % 2 === 1);
 
         return (
           <div className="mt-8 space-y-6">
@@ -233,9 +244,9 @@ export default function ProjectDetailPage() {
                     key={group.title}
                     files={group.files}
                     projectId={project.id}
-                    icon={group.icon}
+                    icon={<File className="h-5 w-5 text-zinc-400" />}
                     title={group.title}
-                    emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+                    emptyMessage={`Nenhum arquivo`}
                   />
                 ))}
               </div>
@@ -245,9 +256,9 @@ export default function ProjectDetailPage() {
                     key={group.title}
                     files={group.files}
                     projectId={project.id}
-                    icon={group.icon}
+                    icon={<File className="h-5 w-5 text-zinc-400" />}
                     title={group.title}
-                    emptyMessage={`Nenhum ${group.title.toLowerCase()}`}
+                    emptyMessage={`Nenhum arquivo`}
                   />
                 ))}
               </div>

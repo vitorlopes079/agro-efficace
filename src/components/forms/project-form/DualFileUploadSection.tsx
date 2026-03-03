@@ -7,6 +7,7 @@ import type { FileItem } from "@/hooks/useFileUpload";
 interface UploadSide {
   description: string;
   fileTypes: string;
+  accept?: string; // File type filter for the input
   files: FileItem[];
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (fileId: string) => void;
@@ -32,6 +33,10 @@ export function DualFileUploadSection({
   const rightHasFiles = rightUpload.files.length > 0;
   const anyFiles = leftHasFiles || rightHasFiles;
 
+  // Mutually exclusive: block the other side if one has files
+  const leftBlocked = disabled || rightHasFiles;
+  const rightBlocked = disabled || leftHasFiles;
+
   return (
     <Card>
       <CardHeader>
@@ -50,10 +55,11 @@ export function DualFileUploadSection({
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {/* LEFT: Ortomosaico */}
           <label
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-4 py-6 transition-all duration-200
-              ${leftUpload.hoverBorderColor ?? "hover:border-green-500/50"} hover:bg-zinc-800
-              ${rightHasFiles && !leftHasFiles ? "opacity-40" : "opacity-100"}
-              ${disabled ? "cursor-not-allowed opacity-50" : ""}
+            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-4 py-6 transition-all duration-200
+              ${leftBlocked
+                ? "cursor-not-allowed opacity-40"
+                : `cursor-pointer ${leftUpload.hoverBorderColor ?? "hover:border-green-500/50"} hover:bg-zinc-800`
+              }
             `}
           >
             <Upload className="mb-2 h-7 w-7 text-zinc-500" />
@@ -66,18 +72,20 @@ export function DualFileUploadSection({
             <input
               type="file"
               multiple
+              accept={leftUpload.accept}
               onChange={leftUpload.onChange}
               className="hidden"
-              disabled={disabled}
+              disabled={leftBlocked}
             />
           </label>
 
           {/* RIGHT: Fotos */}
           <label
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-4 py-6 transition-all duration-200
-              ${rightUpload.hoverBorderColor ?? "hover:border-blue-500/50"} hover:bg-zinc-800
-              ${leftHasFiles && !rightHasFiles ? "opacity-40" : "opacity-100"}
-              ${disabled ? "cursor-not-allowed opacity-50" : ""}
+            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-700 bg-zinc-800/50 px-4 py-6 transition-all duration-200
+              ${rightBlocked
+                ? "cursor-not-allowed opacity-40"
+                : `cursor-pointer ${rightUpload.hoverBorderColor ?? "hover:border-blue-500/50"} hover:bg-zinc-800`
+              }
             `}
           >
             <Upload className="mb-2 h-7 w-7 text-zinc-500" />
@@ -90,9 +98,10 @@ export function DualFileUploadSection({
             <input
               type="file"
               multiple
+              accept={rightUpload.accept}
               onChange={rightUpload.onChange}
               className="hidden"
-              disabled={disabled}
+              disabled={rightBlocked}
             />
           </label>
         </div>

@@ -49,13 +49,24 @@ export function ProjectInputFilesSection({
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1">
-          <FileList
-            files={project.filesGrouped.ortomosaico}
-            projectId={project.id}
-            icon={<MapIcon />}
-            title="Ortomosaicos"
-            emptyMessage="Nenhum ortomosaico enviado"
-          />
+          {/* Show Ortomosaico OR Fotos (mutually exclusive) */}
+          {project.filesGrouped.ortomosaico.length > 0 ? (
+            <FileList
+              files={project.filesGrouped.ortomosaico}
+              projectId={project.id}
+              icon={<MapIcon />}
+              title="Ortomosaicos"
+              emptyMessage="Nenhum ortomosaico enviado"
+            />
+          ) : (
+            <FileList
+              files={project.filesGrouped.fotos}
+              projectId={project.id}
+              icon={<File className="h-5 w-5 text-zinc-400" />}
+              title="Fotos do Drone"
+              emptyMessage="Nenhuma foto enviada"
+            />
+          )}
         </div>
         <div className="flex-1">
           <FileList
@@ -67,16 +78,6 @@ export function ProjectInputFilesSection({
           />
         </div>
       </div>
-
-      {project.filesGrouped.fotos.length > 0 && (
-        <FileList
-          files={project.filesGrouped.fotos}
-          projectId={project.id}
-          icon={<File className="h-5 w-5 text-zinc-400" />}
-          title="Fotos do Drone"
-          emptyMessage="Nenhuma foto enviada"
-        />
-      )}
 
       {project.filesGrouped.outros.length > 0 && (
         <FileList

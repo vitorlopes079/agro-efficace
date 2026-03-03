@@ -1,11 +1,8 @@
-import {
-  VALID_PROJECT_TYPES,
-  VALID_CULTURES,
-} from "@/lib/constants/project-constants";
+import { prisma } from "@/lib/prisma";
 
 export interface ProjectInput {
   projectName: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array for multi-select
   culture: string;
   notes?: string;
   files: Array<{ category: string; pendingUploadId: string }>;
@@ -20,9 +17,9 @@ export interface ValidationError {
 export function validateRequiredFields(
   input: ProjectInput,
 ): ValidationError | null {
-  if (!input.projectName || !input.projectType || !input.culture) {
+  if (!input.projectName || !input.projectTypes?.length || !input.culture) {
     return {
-      error: "Nome, tipo e cultura são obrigatórios",
+      error: "Nome, tipo(s) e cultura são obrigatórios",
       status: 400,
     };
   }
@@ -52,25 +49,40 @@ export function validateFiles(
   return null;
 }
 
-export function validateProjectType(
-  projectType: string,
-): ValidationError | null {
-  const projectTypeUpper = projectType.toUpperCase();
+export async function validateProjectTypes(
+  projectTypes: string[],
+): Promise<ValidationError | null> {
+  // Fetch valid project types from config table
+  const validTypes = await prisma.projectTypeConfig.findMany({
+    select: { key: true },
+  });
+  const validKeys = validTypes.map((t) => t.key.toUpperCase());
 
-  if (!VALID_PROJECT_TYPES.includes(projectTypeUpper as any)) {
-    return {
-      error: "Tipo de projeto inválido",
-      status: 400,
-    };
+  for (const projectType of projectTypes) {
+    const projectTypeUpper = projectType.toUpperCase();
+    if (!validKeys.includes(projectTypeUpper)) {
+      return {
+        error: `Tipo de projeto inválido: ${projectType}`,
+        status: 400,
+      };
+    }
   }
 
   return null;
 }
 
-export function validateCulture(culture: string): ValidationError | null {
+export async function validateCulture(
+  culture: string,
+): Promise<ValidationError | null> {
+  // Fetch valid cultures from config table
+  const validCultures = await prisma.cultureConfig.findMany({
+    select: { key: true },
+  });
+  const validKeys = validCultures.map((c) => c.key.toUpperCase());
+
   const cultureUpper = culture.toUpperCase();
 
-  if (!VALID_CULTURES.includes(cultureUpper as any)) {
+  if (!validKeys.includes(cultureUpper)) {
     return {
       error: "Cultura inválida",
       status: 400,
@@ -127,9 +139,9 @@ export function validateTargetUser(
   return null;
 }
 
-export function validateProjectInput(
+export async function validateProjectInput(
   input: ProjectInput,
-): ValidationError | null {
+): Promise<ValidationError | null> {
   // Check required fields
   const requiredFieldsError = validateRequiredFields(input);
   if (requiredFieldsError) return requiredFieldsError;
@@ -138,12 +150,12 @@ export function validateProjectInput(
   const filesError = validateFiles(input.files);
   if (filesError) return filesError;
 
-  // Check project type
-  const projectTypeError = validateProjectType(input.projectType);
-  if (projectTypeError) return projectTypeError;
+  // Check project types (now async, validates against config table)
+  const projectTypesError = await validateProjectTypes(input.projectTypes);
+  if (projectTypesError) return projectTypesError;
 
-  // Check culture
-  const cultureError = validateCulture(input.culture);
+  // Check culture (now async, validates against config table)
+  const cultureError = await validateCulture(input.culture);
   if (cultureError) return cultureError;
 
   return null;

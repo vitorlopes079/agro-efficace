@@ -9,13 +9,13 @@ interface Stats {
 interface Project {
   id: string;
   name: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array
   culture: string;
   status: string;
   area: string | null;
   price: string;
-  userName: string; // ← Added
-  userEmail: string; // ← Added
+  userName: string;
+  userEmail: string;
   filesCount: number;
   createdAt: string;
 }
@@ -120,14 +120,14 @@ export async function getProjects(
   const formattedProjects = projects.map((project) => ({
     id: project.id,
     name: project.name,
-    projectType: project.projectType,
+    projectTypes: (project as any).projectTypes || [], // Changed to array
     culture: project.culture,
     status: project.status,
     area: project.areaProcessed?.toString() ?? null,
     price: project.price.toString(),
     filesCount: project._count.files,
-    userName: project.user.name, // ← Added
-    userEmail: project.user.email, // ← Added
+    userName: project.user.name,
+    userEmail: project.user.email,
     createdAt: project.createdAt.toISOString(),
   }));
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { Button, DataTable, SearchInput, StatusBadge, LoadingSpinner } from "@/components/ui";
 import { projectStatusConfig } from "@/lib/constants/status-configs";
-import { projectTypeLabels, cultureLabels } from "@/lib/constants/project-constants";
+import { useConfigLabels } from "@/hooks/useConfigLabels";
 import { FolderOpen, ChevronRight } from "lucide-react";
 import StatusTabs from "./StatusTabs";
 
@@ -15,7 +15,7 @@ type TabValue = "all" | ProjectStatus | "archived";
 interface Project {
   id: string;
   name: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array
   culture: string;
   status: string;
   notes: string | null;
@@ -55,85 +55,91 @@ interface AdminProjectsTableProps {
   initialCounts: StatusCounts;
 }
 
-const columns = [
-  {
-    key: "id",
-    header: "ID",
-    render: (project: Project) => (
-      <span className="text-sm text-zinc-500 font-mono">
-        {project.id.slice(0, 8)}
-      </span>
-    ),
-  },
-  {
-    key: "name",
-    header: "Projeto",
-    render: (project: Project) => (
-      <div>
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-white">{project.name}</p>
-          {project.isArchived && (
-            <StatusBadge label="Arquivado" variant="gray" />
-          )}
-        </div>
-        <p className="text-xs text-zinc-500">
-          {projectTypeLabels[project.projectType]} •{" "}
-          {cultureLabels[project.culture]}
-        </p>
-      </div>
-    ),
-  },
-  {
-    key: "owner",
-    header: "Proprietário",
-    render: (project: Project) => (
-      <div>
-        <p className="text-sm text-zinc-300">{project.owner.name}</p>
-        <p className="text-xs text-zinc-500">{project.owner.email}</p>
-      </div>
-    ),
-  },
-  {
-    key: "area",
-    header: "Área",
-    render: (project: Project) => (
-      <span className="text-sm text-zinc-300">
-        {project.area && parseFloat(project.area) > 0
-          ? `${parseFloat(project.area).toFixed(2)} ha`
-          : "—"}
-      </span>
-    ),
-  },
-  {
-    key: "price",
-    header: "Valor",
-    render: (project: Project) => (
-      <span className="text-sm text-zinc-300">
-        {project.price && parseFloat(project.price) > 0
-          ? `R$ ${parseFloat(project.price).toFixed(2)}`
-          : "—"}
-      </span>
-    ),
-  },
-  {
-    key: "status",
-    header: "Status",
-    render: (project: Project) => {
-      const config = projectStatusConfig[project.status] || {
-        label: project.status,
-        variant: "gray" as const,
-      };
-      return <StatusBadge label={config.label} variant={config.variant} />;
+// Columns factory function that uses labels
+function createColumns(
+  getProjectTypesLabel: (keys: string[]) => string,
+  getCultureLabel: (key: string) => string
+) {
+  return [
+    {
+      key: "id",
+      header: "ID",
+      render: (project: Project) => (
+        <span className="text-sm text-zinc-500 font-mono">
+          {project.id.slice(0, 8)}
+        </span>
+      ),
     },
-  },
-  {
-    key: "createdAt",
-    header: "Criado em",
-    render: (project: Project) => (
-      <span className="text-sm text-zinc-500">{project.createdAt}</span>
-    ),
-  },
-];
+    {
+      key: "name",
+      header: "Projeto",
+      render: (project: Project) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-white">{project.name}</p>
+            {project.isArchived && (
+              <StatusBadge label="Arquivado" variant="gray" />
+            )}
+          </div>
+          <p className="text-xs text-zinc-500">
+            {getProjectTypesLabel(project.projectTypes)} •{" "}
+            {getCultureLabel(project.culture)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "owner",
+      header: "Proprietário",
+      render: (project: Project) => (
+        <div>
+          <p className="text-sm text-zinc-300">{project.owner.name}</p>
+          <p className="text-xs text-zinc-500">{project.owner.email}</p>
+        </div>
+      ),
+    },
+    {
+      key: "area",
+      header: "Área",
+      render: (project: Project) => (
+        <span className="text-sm text-zinc-300">
+          {project.area && parseFloat(project.area) > 0
+            ? `${parseFloat(project.area).toFixed(2)} ha`
+            : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "price",
+      header: "Valor",
+      render: (project: Project) => (
+        <span className="text-sm text-zinc-300">
+          {project.price && parseFloat(project.price) > 0
+            ? `R$ ${parseFloat(project.price).toFixed(2)}`
+            : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (project: Project) => {
+        const config = projectStatusConfig[project.status] || {
+          label: project.status,
+          variant: "gray" as const,
+        };
+        return <StatusBadge label={config.label} variant={config.variant} />;
+      },
+    },
+    {
+      key: "createdAt",
+      header: "Criado em",
+      render: (project: Project) => (
+        <span className="text-sm text-zinc-500">{project.createdAt}</span>
+      ),
+    },
+  ];
+}
 
 export default function AdminProjectsTable({
   initialProjects,
@@ -147,6 +153,12 @@ export default function AdminProjectsTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [pagination, setPagination] = useState<Pagination>(initialPagination);
+
+  // Get dynamic labels from config
+  const { getProjectTypesLabel, getCultureLabel } = useConfigLabels();
+
+  // Create columns with dynamic labels
+  const columns = createColumns(getProjectTypesLabel, getCultureLabel);
 
   // Debounce search query
   useEffect(() => {
@@ -308,7 +320,7 @@ export default function AdminProjectsTable({
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
-                    <span>{projectTypeLabels[project.projectType]} • {cultureLabels[project.culture]}</span>
+                    <span>{getProjectTypesLabel(project.projectTypes)} • {getCultureLabel(project.culture)}</span>
                     {project.area && parseFloat(project.area) > 0 && (
                       <span>{parseFloat(project.area).toFixed(2)} ha</span>
                     )}

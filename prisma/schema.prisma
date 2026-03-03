@@ -110,11 +110,11 @@ model AuditLog {
 }
 
 model Project {
-  id          String        @id @default(cuid())
-  name        String
-  projectType ProjectType
-  culture     Culture
-  status      ProjectStatus @default(PENDING)
+  id           String        @id @default(cuid())
+  name         String
+  projectTypes String[]      // Dynamic, validated against ProjectTypeConfig
+  culture      String        // Dynamic, validated against CultureConfig
+  status       ProjectStatus @default(PENDING)
   notes       String?       @db.Text
 
   userId String
@@ -182,8 +182,8 @@ model File {
   fileType String
   fileKey  String
 
-  fileCategory FileCategory @default(INPUT_OTHER)
-  isInput      Boolean      @default(true)
+  fileCategory String  @default("INPUT_OTHER")
+  isInput      Boolean @default(true)
 
   uploadedAt DateTime @default(now())
   uploadedBy String
@@ -235,21 +235,8 @@ enum UserStatus {
   SUSPENDED
 }
 
-enum ProjectType {
-  DANINHAS
-  FALHAS
-  RESTITUICAO
-  MAPEAMENTO
-}
-
-enum Culture {
-  CANA
-  MILHO
-  SOJA
-  EUCALIPTO
-  CAFE
-  ALGODAO
-}
+// ProjectType and Culture are now dynamic strings
+// Validated against ProjectTypeConfig and CultureConfig tables
 
 enum ProjectStatus {
   PENDING
@@ -258,19 +245,3 @@ enum ProjectStatus {
   CANCELLED
 }
 
-enum FileCategory {
-  // Input files
-  INPUT_ORTOMOSAICO
-  INPUT_PERIMETRO
-  INPUT_OTHER
-  INPUT_FOTOS        // ← NOVO
-
-  // Output/Deliverable files
-  OUTPUT_DJI_SHAPEFILE
-  OUTPUT_ORTOMOSAIC
-  OUTPUT_RELATORIO
-  OUTPUT_SHAPEFILE_DANINHAS
-  OUTPUT_SHAPEFILE_OBSTACULOS
-  OUTPUT_SHAPEFILE_PERIMETROS
-  OUTPUT_OTHER
-}

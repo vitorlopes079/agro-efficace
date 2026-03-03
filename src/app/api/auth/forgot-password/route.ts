@@ -18,12 +18,12 @@ export async function POST(req: NextRequest) {
     const clientIp = getClientIp(req.headers);
     const rateLimit = checkRateLimit(
       `forgot-password:${clientIp}`,
-      rateLimiters.passwordReset
+      rateLimiters.passwordReset,
     );
 
     if (!rateLimit.success) {
       const retryAfterSeconds = Math.ceil(
-        (rateLimit.resetAt - Date.now()) / 1000
+        (rateLimit.resetAt - Date.now()) / 1000,
       );
       return NextResponse.json(
         {
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         {
           status: 429,
           headers: { "Retry-After": retryAfterSeconds.toString() },
-        }
+        },
       );
     }
 
@@ -41,10 +41,7 @@ export async function POST(req: NextRequest) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     // Validate email format
@@ -52,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +63,8 @@ export async function POST(req: NextRequest) {
     if (!user || user.status !== "ACTIVE") {
       return NextResponse.json({
         success: true,
-        message: "If an account with that email exists, a password reset link has been sent.",
+        message:
+          "If an account with that email exists, a password reset link has been sent.",
       });
     }
 
@@ -112,7 +110,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json(
         { error: "Failed to send password reset email. Please try again." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -134,13 +132,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "If an account with that email exists, a password reset link has been sent.",
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
     });
   } catch (error) {
-    console.error("Error in forgot-password:", error);
+    console.error("[forgot-password] Unexpected error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

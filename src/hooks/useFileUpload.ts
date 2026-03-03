@@ -72,6 +72,7 @@ export function useFileUpload() {
   const [files, setFiles] = useState<FileItem[]>([]);
 
   const uploadFile = async (fileItem: FileItem) => {
+    console.log(`[uploadFile] START: ${fileItem.name} at ${new Date().toISOString()}`);
     try {
       setFiles((prev) =>
         prev.map((f) =>
@@ -199,6 +200,7 @@ export function useFileUpload() {
         throw new Error("Erro ao confirmar upload");
       }
 
+      console.log(`[uploadFile] COMPLETE: ${fileItem.name} at ${new Date().toISOString()}`);
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileItem.id
@@ -231,6 +233,8 @@ export function useFileUpload() {
   };
 
   const addFiles = async (selectedFiles: FileList) => {
+    console.log(`[addFiles] Starting with ${selectedFiles.length} files`);
+
     const newFiles: FileItem[] = Array.from(selectedFiles).map((file) => ({
       id: Math.random().toString(36).substring(7),
       file,
@@ -244,8 +248,12 @@ export function useFileUpload() {
     setFiles((prev) => [...prev, ...newFiles]);
 
     for (const fileItem of newFiles) {
+      console.log(`[addFiles] Starting upload for: ${fileItem.name}`);
       await uploadFile(fileItem);
+      console.log(`[addFiles] Finished upload for: ${fileItem.name}`);
     }
+
+    console.log(`[addFiles] All uploads complete`);
   };
 
   const removeFile = (id: string) => {

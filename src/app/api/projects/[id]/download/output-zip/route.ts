@@ -61,22 +61,10 @@ export async function GET(
       );
     }
 
-    
     const archive = archiver("zip", { zlib: { level: 0 } });
-
-    const folderMapping: Record<string, string> = {
-      OUTPUT_DJI_SHAPEFILE: "DJI Shapefile",
-      OUTPUT_ORTOMOSAIC: "Ortomosaico Processado",
-      OUTPUT_RELATORIO: "Relatorios",
-      OUTPUT_SHAPEFILE_DANINHAS: "Shapefiles/Daninhas Folha Larga",
-      OUTPUT_SHAPEFILE_OBSTACULOS: "Shapefiles/Obstaculos",
-      OUTPUT_SHAPEFILE_PERIMETROS: "Shapefiles/Perimetros",
-      OUTPUT_OTHER: "Outros Arquivos",
-    };
 
     for (const file of project.files) {
       try {
-
         const getCommand = new GetObjectCommand({
           Bucket: R2_BUCKET,
           Key: file.fileKey,
@@ -85,7 +73,8 @@ export async function GET(
 
         if (response.Body) {
           const stream = response.Body as Readable;
-          const folder = folderMapping[file.fileCategory] || "outros";
+          // Use the fileCategory (custom section title) as the folder name
+          const folder = file.fileCategory || "Outros Arquivos";
           archive.append(stream, { name: `${folder}/${file.fileName}` });
         }
       } catch (error) {

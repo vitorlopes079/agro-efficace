@@ -5,13 +5,14 @@ export interface FileData {
   fileType: string;
   fileKey: string;
   fileCategory: string;
+  isInput: boolean;
   uploadedAt: string;
 }
 
 export interface ProjectData {
   id: string;
   name: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array for multi-select
   culture: string;
   status: string;
   notes: string | null;

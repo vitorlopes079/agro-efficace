@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, Input, Select } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle, Input, Select, MultiSelect } from "@/components/ui";
 import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
 import type { ProjectFormData } from "@/hooks/useProjectFormState";
 
@@ -25,6 +25,7 @@ interface ProjectInfoSectionProps {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => void;
+  onProjectTypesChange: (types: string[]) => void; // New handler for multi-select
   disabled?: boolean;
 }
 
@@ -36,6 +37,7 @@ export function ProjectInfoSection({
   selectedUser,
   onSelectedUserChange,
   onInputChange,
+  onProjectTypesChange,
   disabled = false,
 }: ProjectInfoSectionProps) {
   return (
@@ -64,13 +66,12 @@ export function ProjectInfoSection({
           disabled={disabled}
         />
 
-        <Select
-          label="Tipo de Projeto"
-          name="projectType"
-          value={formData.projectType}
-          onChange={onInputChange}
+        <MultiSelect
+          label="Tipo(s) de Projeto"
+          value={formData.projectTypes}
+          onChange={onProjectTypesChange}
           options={projectTypes}
-          placeholder="Selecione o tipo"
+          placeholder="Selecione o(s) tipo(s)"
           required
           disabled={disabled}
         />

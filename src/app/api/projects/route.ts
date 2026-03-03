@@ -13,7 +13,6 @@ import {
   determineProjectOwner,
   createAuditLog,
 } from "@/lib/services/project-creation";
-import { VALID_CULTURES, VALID_PROJECT_TYPES } from "@/lib/constants/project-constants";
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -53,14 +52,15 @@ export async function POST(req: NextRequest) {
 
     const input: ProjectInput = {
       projectName: body.projectName,
-      projectType: body.projectType,
+      projectTypes: body.projectTypes || [], // Changed to array
       culture: body.culture,
       notes: body.notes,
       files: body.files,
       userId: body.userId,
     };
 
-    const validationError = validateProjectInput(input);
+    // Validation is now async (validates against config tables)
+    const validationError = await validateProjectInput(input);
     if (validationError) {
       return NextResponse.json(
         { error: validationError.error },
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       result.project.id,
       {
         name: result.project.name,
-        projectType: result.project.projectType,
+        projectTypes: result.project.projectTypes,
         culture: result.project.culture,
         filesCount: result.project.filesProcessed,
       },
@@ -161,28 +161,15 @@ export async function GET(req: NextRequest) {
     const whereClause: any = isAdmin ? {} : { userId: session.user.id };
 
     if (search) {
-
-      const searchUpper = search.toUpperCase();
-
-      // Build OR conditions
+      // Build OR conditions - search in name, culture, and projectTypes array
       const orConditions: any[] = [
-        // Search in name (String field - supports contains)
+        // Search in name
         { name: { contains: search, mode: "insensitive" } },
+        // Search in culture (now a string)
+        { culture: { contains: search, mode: "insensitive" } },
+        // Search in projectTypes array (has any matching element)
+        { projectTypes: { has: search.toUpperCase() } },
       ];
-
-      // Check if search matches any Culture enum value
-      const matchingCulture = VALID_CULTURES.find((c) => c.includes(searchUpper));
-      if (matchingCulture) {
-        orConditions.push({ culture: matchingCulture });
-      }
-
-      // Check if search matches any ProjectType enum value
-      const matchingProjectType = VALID_PROJECT_TYPES.find((pt) =>
-        pt.includes(searchUpper),
-      );
-      if (matchingProjectType) {
-        orConditions.push({ projectType: matchingProjectType });
-      }
 
       whereClause.OR = orConditions;
     }
@@ -216,7 +203,7 @@ export async function GET(req: NextRequest) {
     const formattedProjects = projects.map((project) => ({
       id: project.id,
       name: project.name,
-      projectType: project.projectType,
+      projectTypes: (project as any).projectTypes || [], // Changed to array
       culture: project.culture,
       status: project.status,
       notes: project.notes,

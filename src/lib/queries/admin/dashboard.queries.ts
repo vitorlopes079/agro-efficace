@@ -35,7 +35,7 @@ type ProjectStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED";
 interface AdminProject {
   id: string;
   name: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array
   culture: string;
   status: string;
   notes: string | null;
@@ -324,7 +324,7 @@ export async function getAdminProjects(
   const formattedProjects: AdminProject[] = projects.map((project) => ({
     id: project.id,
     name: project.name,
-    projectType: project.projectType,
+    projectTypes: (project as any).projectTypes || [], // Changed to array
     culture: project.culture,
     status: project.status,
     notes: project.notes,

@@ -7,7 +7,7 @@ export interface CreateProjectResult {
   project?: {
     id: string;
     name: string;
-    projectType: string;
+    projectTypes: string[]; // Changed to array
     culture: string;
     status: string;
     filesProcessed: number;
@@ -64,11 +64,14 @@ export async function createProject(
 ): Promise<CreateProjectResult> {
 
   try {
+    // Normalize project types to uppercase
+    const normalizedProjectTypes = input.projectTypes.map((t) => t.toUpperCase());
+
     const project = await prisma.project.create({
       data: {
         name: input.projectName,
-        projectType: input.projectType.toUpperCase() as any,
-        culture: input.culture.toUpperCase() as any,
+        projectTypes: normalizedProjectTypes,
+        culture: input.culture.toUpperCase(),
         notes: input.notes || null,
         userId: ownerId,
         status: "PENDING",
@@ -81,7 +84,7 @@ export async function createProject(
       project: {
         id: project.id,
         name: project.name,
-        projectType: project.projectType,
+        projectTypes: project.projectTypes,
         culture: project.culture,
         status: project.status,
         filesProcessed: 0,
@@ -142,7 +145,7 @@ export async function createAuditLog(
   projectId: string,
   projectData: {
     name: string;
-    projectType: string;
+    projectTypes: string[]; // Changed to array
     culture: string;
     filesCount: number;
   },
@@ -160,7 +163,7 @@ export async function createAuditLog(
       userId: sessionUserId,
       metadata: {
         projectName: projectData.name,
-        projectType: projectData.projectType,
+        projectTypes: projectData.projectTypes,
         culture: projectData.culture,
         filesCount: projectData.filesCount,
         // Track if admin created for another user

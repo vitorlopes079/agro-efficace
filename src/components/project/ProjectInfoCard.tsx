@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent, StatusBadge } from "@/components/ui";
 import { statusConfig } from "@/lib/constants/status-configs";
-import { projectTypeLabels, cultureLabels } from "@/lib/constants/project-constants";
+import { useConfigLabels } from "@/hooks/useConfigLabels";
 import { formatDate, formatCurrency } from "@/lib/utils/formatters";
 import type { ProjectData } from "@/lib/types/project";
 
@@ -12,6 +12,8 @@ interface ProjectInfoCardProps {
 }
 
 export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInfoCardProps) {
+  const { getProjectTypesLabel, getCultureLabel } = useConfigLabels();
+
   const statusInfo = statusConfig[project.status] || {
     label: project.status,
     variant: "gray" as const,
@@ -26,10 +28,10 @@ export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInf
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-              Tipo de Projeto
+              Tipo(s) de Projeto
             </p>
             <p className="mt-1 text-sm text-white">
-              {projectTypeLabels[project.projectType] || project.projectType}
+              {getProjectTypesLabel(project.projectTypes)}
             </p>
           </div>
           <div>
@@ -37,7 +39,7 @@ export function ProjectInfoCard({ project, showPaymentInfo = false }: ProjectInf
               Cultura
             </p>
             <p className="mt-1 text-sm text-white">
-              {cultureLabels[project.culture] || project.culture}
+              {getCultureLabel(project.culture)}
             </p>
           </div>
           <div>

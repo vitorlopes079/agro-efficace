@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export interface ProjectFormData {
   projectName: string;
-  projectType: string;
+  projectTypes: string[]; // Changed to array for multi-select
   culture: string;
   notes: string;
 }
@@ -10,7 +10,7 @@ export interface ProjectFormData {
 export function useProjectFormState() {
   const [formData, setFormData] = useState<ProjectFormData>({
     projectName: "",
-    projectType: "",
+    projectTypes: [],
     culture: "",
     notes: "",
   });
@@ -24,10 +24,15 @@ export function useProjectFormState() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handler for multi-select project types
+  const handleProjectTypesChange = useCallback((types: string[]) => {
+    setFormData((prev) => ({ ...prev, projectTypes: types }));
+  }, []);
+
   const resetForm = () => {
     setFormData({
       projectName: "",
-      projectType: "",
+      projectTypes: [],
       culture: "",
       notes: "",
     });
@@ -36,6 +41,7 @@ export function useProjectFormState() {
   return {
     formData,
     handleInputChange,
+    handleProjectTypesChange,
     resetForm,
   };
 }

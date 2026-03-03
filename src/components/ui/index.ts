@@ -17,6 +17,7 @@ export { LoadingSpinner, LoadingText } from "./loading-spinner";
 export { BalanceDetailsModal } from "./balance-details-modal";
 export { SearchInput } from "./search-input";
 export { Select } from "./select";
+export { MultiSelect } from "./MultiSelect";
 export { StatCard } from "./stat-card";
 export { StatusBadge } from "./status-badge";
 export { ToastProvider, useToast } from "./toast";

@@ -49,13 +49,7 @@ export default function AdminProjectDetailPage() {
   const {
     inputFiles,
     outputFiles,
-    outputDJI,
-    outputOrtomosaic,
-    outputRelatorio,
-    outputDaninhas,
-    outputObstaculos,
-    outputPerimetros,
-    outputOutros,
+    outputFileGroups,
   } = useProjectFileGrouping(project);
 
   const handleDownloadInputZip = () => {
@@ -238,13 +232,7 @@ export default function AdminProjectDetailPage() {
       {project.status === "COMPLETED" && outputFiles.length > 0 && (
         <ProjectOutputFilesSection
           projectId={project.id}
-          outputDJI={outputDJI}
-          outputOrtomosaic={outputOrtomosaic}
-          outputRelatorio={outputRelatorio}
-          outputDaninhas={outputDaninhas}
-          outputObstaculos={outputObstaculos}
-          outputPerimetros={outputPerimetros}
-          outputOutros={outputOutros}
+          outputFileGroups={outputFileGroups}
         />
       )}
 

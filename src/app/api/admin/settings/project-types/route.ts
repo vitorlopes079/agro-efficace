@@ -11,10 +11,6 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    if (session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
-    }
-
     const projectTypes = await prisma.projectTypeConfig.findMany({
       orderBy: {
         createdAt: "asc",

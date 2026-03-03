@@ -48,20 +48,24 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
   const isAdmin = session?.user?.role === "ADMIN";
   const backUrl = isAdmin ? "/admin/projects" : "/dashboard";
 
-  const { formData, handleInputChange } = useProjectFormState();
+  const { formData, handleInputChange, handleProjectTypesChange } = useProjectFormState();
   const uploads = useMultipleFileUploads();
 
   const handleOrtomosaicoChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     if (e.target.files) {
+      console.log(`[ORTOMOSAICO] Selected ${e.target.files.length} files`);
       await uploads.ortomosaico.addFiles(e.target.files);
+      console.log(`[ORTOMOSAICO] Handler complete`);
     }
   };
 
   const handleFotosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      console.log(`[FOTOS] Selected ${e.target.files.length} files`);
       await uploads.fotos.addFiles(e.target.files);
+      console.log(`[FOTOS] Handler complete`);
     }
   };
 
@@ -69,13 +73,17 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     if (e.target.files) {
+      console.log(`[PERIMETRO] Selected ${e.target.files.length} files`);
       await uploads.perimetro.addFiles(e.target.files);
+      console.log(`[PERIMETRO] Handler complete`);
     }
   };
 
   const handleOutrosChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      console.log(`[OUTROS] Selected ${e.target.files.length} files`);
       await uploads.outros.addFiles(e.target.files);
+      console.log(`[OUTROS] Handler complete`);
     }
   };
 
@@ -85,6 +93,11 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
 
     if (isAdmin && !selectedUser) {
       setError("Selecione o proprietário do projeto");
+      return;
+    }
+
+    if (formData.projectTypes.length === 0) {
+      setError("Selecione pelo menos um tipo de projeto");
       return;
     }
 
@@ -113,7 +126,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
         },
         body: JSON.stringify({
           projectName: formData.projectName,
-          projectType: formData.projectType.toUpperCase(),
+          projectTypes: formData.projectTypes.map((t) => t.toUpperCase()),
           culture: formData.culture.toUpperCase(),
           notes: formData.notes || null,
           ...(isAdmin && selectedUser ? { userId: selectedUser.id } : {}),
@@ -215,6 +228,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             selectedUser={selectedUser}
             onSelectedUserChange={setSelectedUser}
             onInputChange={handleInputChange}
+            onProjectTypesChange={handleProjectTypesChange}
             disabled={isSubmitting}
           />
 
@@ -224,6 +238,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             leftUpload={{
               description: "Upload do Ortomosaico",
               fileTypes: "TIF, TIFF, ECW",
+              accept: ".tif,.tiff,.ecw",
               files: uploads.ortomosaico.files,
               onChange: handleOrtomosaicoChange,
               onRemove: uploads.ortomosaico.removeFile,
@@ -231,7 +246,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             }}
             rightUpload={{
               description: "Upload das Fotos",
-              fileTypes: "ZIP, RAR, 7Z",
+              fileTypes: "ZIP, RAR, 7Z, Imagens",
+              accept: ".zip,.rar,.7z,image/*",
               files: uploads.fotos.files,
               onChange: handleFotosChange,
               onRemove: uploads.fotos.removeFile,
@@ -244,7 +260,8 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
             title="Perímetros de Análise"
             required={false}
             description="Upload dos Perímetros"
-            fileTypes="SHP, KML, GeoJSON (Shapefiles e vetores)"
+            fileTypes="Shapefiles, KML, GeoJSON e vetores"
+            accept=".shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.xml,.kml,.kmz,.geojson,.json,.gpx,.gml,.zip"
             files={uploads.perimetro.files}
             onFileChange={handlePerimetroChange}
             onRemoveFile={uploads.perimetro.removeFile}

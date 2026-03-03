@@ -1,1 +1,1 @@
-export { FinalizeUploadSection } from "./FinalizeUploadSection";
+export { DynamicUploadSection } from "./DynamicUploadSection";
