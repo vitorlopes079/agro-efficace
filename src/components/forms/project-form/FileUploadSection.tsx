@@ -6,6 +6,7 @@ import type { FileItem } from "@/hooks/useFileUpload";
 interface FileUploadSectionProps {
   title: string;
   required?: boolean;
+  statusLabel?: string; // Custom label to override "Obrigatório"/"Opcional"
   description: string;
   fileTypes: string;
   accept?: string; // File type filter for the input
@@ -19,6 +20,7 @@ interface FileUploadSectionProps {
 export function FileUploadSection({
   title,
   required = false,
+  statusLabel,
   description,
   fileTypes,
   accept,
@@ -34,7 +36,7 @@ export function FileUploadSection({
         <CardTitle>
           {title}
           <span className="ml-2 text-sm font-normal text-zinc-400">
-            ({required ? "Obrigatório" : "Opcional"})
+            ({statusLabel ?? (required ? "Obrigatório" : "Opcional")})
           </span>
         </CardTitle>
       </CardHeader>

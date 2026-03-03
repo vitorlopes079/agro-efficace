@@ -258,7 +258,7 @@ export function NewProjectForm({ initialData }: NewProjectFormProps) {
 
           <FileUploadSection
             title="Perímetros de Análise"
-            required={false}
+            statusLabel="Recomendado"
             description="Upload dos Perímetros"
             fileTypes="Shapefiles, KML, GeoJSON e vetores"
             accept=".shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx,.xml,.kml,.kmz,.geojson,.json,.gpx,.gml,.zip"

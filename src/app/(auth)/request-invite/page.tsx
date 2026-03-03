@@ -4,7 +4,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Mail, Phone, Building2, MapPin, Wheat, ArrowLeft } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Building2,
+  MapPin,
+  ArrowLeft,
+  Leaf,
+  Sprout,
+  TreePine,
+  Coffee,
+  Flower2,
+  CirclePlus,
+  Wheat,
+} from "lucide-react";
 import {
   Button,
   Card,
@@ -59,12 +73,13 @@ const BRAZILIAN_STATES = [
 ];
 
 const CULTURES = [
-  { value: "CANA", label: "Cana-de-açúcar" },
-  { value: "MILHO", label: "Milho" },
-  { value: "SOJA", label: "Soja" },
-  { value: "EUCALIPTO", label: "Eucalipto" },
-  { value: "CAFE", label: "Café" },
-  { value: "ALGODAO", label: "Algodão" },
+  { value: "CANA", label: "Cana-de-açúcar", icon: Leaf },
+  { value: "MILHO", label: "Milho", icon: Wheat },
+  { value: "SOJA", label: "Soja", icon: Sprout },
+  { value: "EUCALIPTO", label: "Eucalipto", icon: TreePine },
+  { value: "CAFE", label: "Café", icon: Coffee },
+  { value: "ALGODAO", label: "Algodão", icon: Flower2 },
+  { value: "OUTROS", label: "Outros", icon: CirclePlus },
 ];
 
 const PROJECT_TYPES = [
@@ -72,6 +87,7 @@ const PROJECT_TYPES = [
   { value: "FALHAS", label: "Detecção de Falhas" },
   { value: "RESTITUICAO", label: "Restituição" },
   { value: "MAPEAMENTO", label: "Mapeamento" },
+  { value: "OUTROS", label: "Outros" },
 ];
 
 interface FormData {
@@ -283,28 +299,34 @@ export default function RequestInvitePage() {
                   Culturas de interesse
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {CULTURES.map((culture) => (
-                    <label
-                      key={culture.value}
-                      className={`
-                        flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all
-                        ${formData.cultures.includes(culture.value)
-                          ? "border-green-500/50 bg-green-500/10 text-green-400"
-                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700"
-                        }
-                      `}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={formData.cultures.includes(culture.value)}
-                        onChange={() => handleCheckboxChange("cultures", culture.value)}
-                        disabled={isLoading}
-                      />
-                      <Wheat className="h-4 w-4" />
-                      {culture.label}
-                    </label>
-                  ))}
+                  {CULTURES.map((culture, index) => {
+                    const Icon = culture.icon;
+                    const isLast = index === CULTURES.length - 1;
+                    const isOdd = CULTURES.length % 2 === 1;
+                    return (
+                      <label
+                        key={culture.value}
+                        className={`
+                          flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all
+                          ${isLast && isOdd ? "col-span-2" : ""}
+                          ${formData.cultures.includes(culture.value)
+                            ? "border-green-500/50 bg-green-500/10 text-green-400"
+                            : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700"
+                          }
+                        `}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={formData.cultures.includes(culture.value)}
+                          onChange={() => handleCheckboxChange("cultures", culture.value)}
+                          disabled={isLoading}
+                        />
+                        <Icon className="h-4 w-4" />
+                        {culture.label}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -314,27 +336,32 @@ export default function RequestInvitePage() {
                   Tipo de análise desejada
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {PROJECT_TYPES.map((type) => (
-                    <label
-                      key={type.value}
-                      className={`
-                        flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all
-                        ${formData.projectTypes.includes(type.value)
-                          ? "border-green-500/50 bg-green-500/10 text-green-400"
-                          : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700"
-                        }
-                      `}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={formData.projectTypes.includes(type.value)}
-                        onChange={() => handleCheckboxChange("projectTypes", type.value)}
-                        disabled={isLoading}
-                      />
-                      {type.label}
-                    </label>
-                  ))}
+                  {PROJECT_TYPES.map((type, index) => {
+                    const isLast = index === PROJECT_TYPES.length - 1;
+                    const isOdd = PROJECT_TYPES.length % 2 === 1;
+                    return (
+                      <label
+                        key={type.value}
+                        className={`
+                          flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all
+                          ${isLast && isOdd ? "col-span-2" : ""}
+                          ${formData.projectTypes.includes(type.value)
+                            ? "border-green-500/50 bg-green-500/10 text-green-400"
+                            : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700"
+                          }
+                        `}
+                      >
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={formData.projectTypes.includes(type.value)}
+                          onChange={() => handleCheckboxChange("projectTypes", type.value)}
+                          disabled={isLoading}
+                        />
+                        {type.label}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
