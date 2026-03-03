@@ -8,13 +8,20 @@ interface SelectOption {
   label: string;
 }
 
+interface SelectChangeEvent {
+  target: {
+    name: string;
+    value: string;
+  };
+}
+
 interface SelectProps {
   label?: string;
   error?: string;
   options: SelectOption[];
   placeholder?: string;
   value?: string;
-  onChange?: (e: { target: { name: string; value: string } }) => void;
+  onChange?: (e: SelectChangeEvent) => void;
   name?: string;
   required?: boolean;
   disabled?: boolean;

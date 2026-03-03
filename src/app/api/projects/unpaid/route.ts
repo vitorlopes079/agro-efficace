@@ -24,7 +24,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        projectType: true,
+        projectTypes: true,
         culture: true,
         status: true,
         price: true,
@@ -39,7 +39,7 @@ export async function GET() {
     const formattedProjects = projects.map((project) => ({
       id: project.id,
       name: project.name,
-      projectType: project.projectType,
+      projectTypes: project.projectTypes,
       culture: project.culture,
       status: project.status,
       price: project.price.toString(),

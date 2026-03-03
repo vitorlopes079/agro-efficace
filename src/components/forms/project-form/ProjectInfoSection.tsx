@@ -20,12 +20,8 @@ interface ProjectInfoSectionProps {
   isAdmin: boolean;
   selectedUser: SelectedUser | null;
   onSelectedUserChange: (user: SelectedUser | null) => void;
-  onInputChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => void;
-  onProjectTypesChange: (types: string[]) => void; // New handler for multi-select
+  onInputChange: (e: { target: { name: string; value: string } }) => void;
+  onProjectTypesChange: (types: string[]) => void;
   disabled?: boolean;
 }
 
