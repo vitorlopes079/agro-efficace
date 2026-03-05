@@ -1,10 +1,7 @@
-// src/app/api/invite-requests/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import { checkRateLimit, getClientIp, rateLimiters } from "@/lib/rate-limit";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface InviteRequestBody {
   name: string;
@@ -181,24 +178,36 @@ function generateInviteRequestEmail(data: InviteRequestBody): string {
                 <div class="info-label">Telefone</div>
                 <div class="info-value"><a href="tel:${data.phone}" style="color: #059669;">${data.phone}</a></div>
               </div>
-              ${data.company ? `
+              ${
+                data.company
+                  ? `
               <div class="info-row">
                 <div class="info-label">Empresa/Fazenda</div>
                 <div class="info-value">${data.company}</div>
               </div>
-              ` : ""}
-              ${data.state ? `
+              `
+                  : ""
+              }
+              ${
+                data.state
+                  ? `
               <div class="info-row">
                 <div class="info-label">Estado</div>
                 <div class="info-value">${data.state}</div>
               </div>
-              ` : ""}
-              ${data.farmSize ? `
+              `
+                  : ""
+              }
+              ${
+                data.farmSize
+                  ? `
               <div class="info-row">
                 <div class="info-label">Área Estimada</div>
                 <div class="info-value">${data.farmSize} hectares</div>
               </div>
-              ` : ""}
+              `
+                  : ""
+              }
             </div>
 
             <div class="section-title">Interesses</div>
@@ -213,12 +222,16 @@ function generateInviteRequestEmail(data: InviteRequestBody): string {
               </div>
             </div>
 
-            ${data.message ? `
+            ${
+              data.message
+                ? `
             <div class="message-section">
               <div class="message-label">Mensagem</div>
               <div class="message-text">${data.message}</div>
             </div>
-            ` : ""}
+            `
+                : ""
+            }
           </div>
 
           <div class="footer">
@@ -233,17 +246,19 @@ function generateInviteRequestEmail(data: InviteRequestBody): string {
 }
 
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   try {
     // Rate limiting - 3 requests per hour per IP
     const clientIp = getClientIp(req.headers);
     const rateLimit = checkRateLimit(
       `invite-request:${clientIp}`,
-      rateLimiters.inviteRequest
+      rateLimiters.inviteRequest,
     );
 
     if (!rateLimit.success) {
       const retryAfterSeconds = Math.ceil(
-        (rateLimit.resetAt - Date.now()) / 1000
+        (rateLimit.resetAt - Date.now()) / 1000,
       );
       return NextResponse.json(
         {
@@ -253,7 +268,7 @@ export async function POST(req: NextRequest) {
         {
           status: 429,
           headers: { "Retry-After": retryAfterSeconds.toString() },
-        }
+        },
       );
     }
 
@@ -263,7 +278,7 @@ export async function POST(req: NextRequest) {
     if (!body.name || !body.email || !body.phone) {
       return NextResponse.json(
         { error: "Nome, email e telefone são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -272,7 +287,7 @@ export async function POST(req: NextRequest) {
     if (!emailRegex.test(body.email)) {
       return NextResponse.json(
         { error: "Formato de email inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -284,7 +299,7 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Este email já está cadastrado no sistema" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -303,8 +318,11 @@ export async function POST(req: NextRequest) {
     if (admins.length === 0) {
       console.error("No active admins found to receive invite request");
       return NextResponse.json(
-        { error: "Não foi possível processar sua solicitação. Tente novamente mais tarde." },
-        { status: 500 }
+        {
+          error:
+            "Não foi possível processar sua solicitação. Tente novamente mais tarde.",
+        },
+        { status: 500 },
       );
     }
 
@@ -322,7 +340,7 @@ export async function POST(req: NextRequest) {
       console.error("Failed to send invite request email:", emailResult.error);
       return NextResponse.json(
         { error: "Erro ao enviar solicitação. Tente novamente mais tarde." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -350,13 +368,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Solicitação enviada com sucesso! Nossa equipe entrará em contato em breve.",
+      message:
+        "Solicitação enviada com sucesso! Nossa equipe entrará em contato em breve.",
     });
   } catch (error) {
     console.error("Error processing invite request:", error);
     return NextResponse.json(
       { error: "Erro inesperado. Tente novamente mais tarde." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
