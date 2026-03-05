@@ -6,13 +6,13 @@ import crypto from "crypto";
 import { PasswordResetEmailTemplate } from "@/lib/email-templates/password-reset-email";
 import { checkRateLimit, getClientIp, rateLimiters } from "@/lib/rate-limit";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function generateResetToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   try {
     // Rate limiting - 3 requests per 15 minutes per IP
     const clientIp = getClientIp(req.headers);
