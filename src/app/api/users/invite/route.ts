@@ -7,8 +7,6 @@ import { Resend } from "resend";
 import crypto from "crypto";
 import { InvitationEmailTemplate } from "@/lib/email-templates/invitation-email";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // Helper function to generate secure random token
 function generateInvitationToken(): string {
   return crypto.randomBytes(32).toString("hex");
@@ -24,6 +22,7 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     // Authentication check - admin only
@@ -67,7 +66,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -80,13 +78,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-
     // Generate invitation token
     const invitationToken = generateInvitationToken();
     const invitationExpiresAt = new Date();
     invitationExpiresAt.setHours(invitationExpiresAt.getHours() + 48);
 
-    
     // Create user in database
     const user = await prisma.user.create({
       data: {
@@ -101,11 +97,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-
     // Create invitation link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const invitationLink = `${baseUrl}/accept-invite?token=${invitationToken}`;
-
 
     // Send invitation email via Resend
     try {
@@ -119,7 +113,6 @@ export async function POST(req: NextRequest) {
           invitationLink,
         }),
       });
-
 
       // Check if Resend returned an error (they don't throw, they return error in response)
       if (emailResult.error) {
@@ -138,7 +131,6 @@ export async function POST(req: NextRequest) {
           { status: 500 },
         );
       }
-
     } catch (emailError) {
       console.error(
         "❌ [INVITE API] Failed to send invitation email (exception):",
@@ -173,7 +165,6 @@ export async function POST(req: NextRequest) {
         userAgent: req.headers.get("user-agent") || null,
       },
     });
-
 
     // Return success
     return NextResponse.json(
