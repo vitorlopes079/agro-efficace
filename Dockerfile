@@ -7,6 +7,7 @@ FROM node:20.10-alpine AS base
 # DEPS: Install production dependencies
 # - libc6-compat needed for some native Node modules on Alpine
 # - Using --legacy-peer-deps for compatibility
+# - --ignore-scripts prevents prisma generate from running before files are ready
 # ==============================================================================
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -17,7 +18,7 @@ RUN npm ci --legacy-peer-deps --ignore-scripts
 
 # ==============================================================================
 # BUILDER: Build the Next.js application
-# - Generates Prisma client for custom output path
+# - Generates Prisma client for custom output path (src/generated)
 # - NEXT_PUBLIC_ vars must be set at build time (baked into client bundle)
 # ==============================================================================
 FROM base AS builder
@@ -33,7 +34,7 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Generate Prisma client (output: src/generated/client)
+# Generate Prisma client - this populates both src/generated AND node_modules/.prisma
 RUN npx prisma generate
 
 # Build Next.js with standalone output
@@ -65,11 +66,12 @@ RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma schema and generated client for migrations
+# Copy Prisma schema and generated client
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
 
-# Copy Prisma CLI for running migrations (from node_modules)
+# Copy Prisma CLI for running migrations at runtime
+# node_modules/.prisma is created by prisma generate (binary engines)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
